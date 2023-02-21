@@ -36,10 +36,12 @@ enter_protected_mode:
     mov  eax, [esp+4]
     ; TODO: Load GDT from GDTDescriptor
     ;       eax at this line will carry GDTR location, dont forget to use square bracket [eax]
+    lgdt [eax]
 
     mov  eax, cr0
-    ; TODO: Set bit-0 (Protection Enable bit-flag) in Control Register 0 (CR0)
+    ; TODO: Set bit-0 (Protection Enable bit-flag) in Control Register 0 (CR0), PE bit flag in Control Register needs to be set to the value of 1
     ;       Set eax with above condition, eax will be copied to CR0 with next instruction
+    or eax, 1
     mov  cr0, eax
 
     ; Far jump to update cs register
@@ -50,5 +52,7 @@ flush_cs:
     ; TODO: Set all data segment register with 0x10
     ;       Segments register need to set with 0x10: ss, ds, es
     mov ss, ax
+    mov ds, ax
+    mov es, ax
 
     ret

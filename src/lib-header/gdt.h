@@ -20,14 +20,25 @@ extern struct GDTR _gdt_gdtr;
  */
 struct SegmentDescriptor {
     // First 32-bit
-    uint16_t segment_low;
-    uint16_t base_low;
+    uint16_t segment_low : 16;
+    uint16_t base_low : 16;
 
     // Next 16-bit (Bit 32 to 47)
-    uint8_t             base_mid;
+    uint8_t  base_mid : 8;
     uint8_t type_bit   : 4;
     uint8_t non_system : 1;
-    // TODO : Continue GDT definition
+        // TODO : Continue GDT definition
+    uint8_t privilege_level  : 2;
+    uint8_t segment_present : 1;
+    
+    // Last 16-bit
+    uint8_t segment_lim : 4;
+    uint8_t available_sys_soft : 1;
+    uint8_t bit_code_segment : 1;
+    uint8_t def_operation : 1;
+    uint8_t granularity : 1;
+    uint8_t base_high : 8;
+
 
 } __attribute__((packed));
 
