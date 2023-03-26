@@ -1,7 +1,7 @@
 #ifndef _IDT_H
 #define _IDT_H
 
-#include "stdtype.h"
+#include "../lib-header/stdtype.h"
 
 // IDT hard limit, see Intel x86 manual 3a - 6.10 Interrupt Descriptor Table
 #define IDT_MAX_ENTRY_COUNT    256
@@ -36,28 +36,41 @@ extern struct IDTR _idt_idtr;
 struct IDTGate {
     // First 32-bit (Bit 0 to 31)
     uint16_t offset_low;
+    uint16_t segment;
 
-    // TODO : Implement
+    // Next 32-bit
+    uint8_t _reserved : 5;
+    uint8_t _r_bit_1 : 3;
+    uint8_t _r_bit_2 : 3;
+    uint8_t gate_32 : 1;
+    uint8_t _r_bit_3 : 1;
+        
+    uint8_t privilege_level : 2;
+    uint8_t valid_bit : 1;
+    uint16_t offset_high;
 } __attribute__((packed));
 
 /**
  * Interrupt Descriptor Table, containing lists of IDTGate.
  * One IDT already defined in idt.c
- *
+ * @param table
  * ...
  */
-// TODO : Implement
-// ...
+struct InterruptDescriptorTable {
+    struct IDTGate table[IDT_MAX_ENTRY_COUNT];
+} __attribute__((packed));
+
 
 /**
  * IDTR, carrying information where's the IDT located and size.
  * Global kernel variable defined at idt.c.
- *
- * ...
+ * @param size Interrupt Descriptor Table size, use sizeof operator
+ * @param address IDT address, IDT should already defined properly
  */
-// TODO : Implement
-// ...
-
+struct IDTR {
+    uint16_t                        size;
+    struct InterruptDescriptorTable *address;
+} __attribute__((packed));
 
 
 /**

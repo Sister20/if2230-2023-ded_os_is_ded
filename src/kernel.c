@@ -4,6 +4,8 @@
 #include "lib-header/gdt.h"
 #include "lib-header/framebuffer.h"
 #include "lib-header/kernel_loader.h"
+#include "interrupt/idt.h"
+#include "interrupt/interrupt.h"
 
 void kernel_setup(void) {
     // uint32_t a;
@@ -19,6 +21,9 @@ void kernel_setup(void) {
     framebuffer_set_cursor(3, 10);
     while (TRUE);
 }
+
+
+
 
 
 

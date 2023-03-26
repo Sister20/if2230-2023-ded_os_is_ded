@@ -24,10 +24,10 @@ struct SegmentDescriptor {
     uint16_t base_low : 16;
 
     // Next 16-bit (Bit 32 to 47)
-    uint8_t  base_mid : 8;
+    uint8_t base_mid : 8;
     uint8_t type_bit   : 4;
     uint8_t non_system : 1;
-        // TODO : Continue GDT definition
+        
     uint8_t privilege_level  : 2;
     uint8_t segment_present : 1;
     
