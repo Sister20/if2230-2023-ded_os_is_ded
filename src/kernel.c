@@ -39,8 +39,9 @@ void kernel_setup(void) {
     initialize_idt();
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
-    while (TRUE)
+    while (TRUE){
         keyboard_state_activate();
+    }
 
 }
 

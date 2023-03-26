@@ -56,24 +56,26 @@ void keyboard_isr(void) {
     if (!keyboard_state.keyboard_input_on)
         keyboard_state.buffer_index = 0;
     else {
-        while (is_keyboard_blocking()){
-            uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
-            char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
-            // TODO : Implement scancode processing
-            if (mapped_char == '\n'){
-                keyboard_state_deactivate();
-            }
-            else if (mapped_char == '\b'){
-                keyboard_state.buffer_index--;
-            } 
-            else {
-                keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
-                keyboard_state.buffer_index++;
-            }
-            framebuffer_write(0,0, 'A', 0, 0xF);
-            framebuffer_write(0,1, 'J', 0, 0xF);
-            framebuffer_write(0,2, 'G', 0, 0xF);
+        uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
+        char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
+        // TODO : Implement scancode processing
+        if (mapped_char == '\n'){
+            keyboard_state_deactivate();
+            framebuffer_move_cursor_most_left();
+            framebuffer_move_cursor_down();
         }
+        else if (mapped_char == '\b'){
+            keyboard_state.buffer_index--;
+            framebuffer_write(framebuffer_get_row(), framebuffer_get_col(), '\0', 0, 0xF);
+            framebuffer_move_cursor_left();
+        } 
+        else {
+            keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
+            keyboard_state.buffer_index++;
+            framebuffer_write(framebuffer_get_row(), framebuffer_get_col(), mapped_char, 0, 0xF);
+            framebuffer_move_cursor_right();
+        }
+        
     }
     pic_ack(IRQ_KEYBOARD);
 }
