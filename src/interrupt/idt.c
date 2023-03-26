@@ -1,4 +1,4 @@
-#include "idt.h"
+#include "lib-header/idt.h"
 #include "../lib-header/stdtype.h"
 
 /**

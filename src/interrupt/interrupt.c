@@ -1,4 +1,5 @@
-#include "interrupt.h"
+#include "lib-header/interrupt.h"
+#include "lib-header/keyboard.h"
 #include "../lib-header/portio.h"
 
 void io_wait(void) {
@@ -45,9 +46,17 @@ void pic_remap(void) {
 void main_interrupt_handler(
     __attribute__((unused)) struct CPURegister cpu,
     uint32_t int_number,
-    __attribute__((unused)) struct InterruptStack info
-) {
-    switch (int_number) {
+    __attribute__((unused)) struct InterruptStack info ) 
+{
 
+    switch (int_number) {
+        case (PIC1 + IRQ_KEYBOARD):
+            keyboard_isr();
+            break;
     }
+}
+
+void activate_keyboard_interrupt(void) {
+    out(PIC1_DATA, PIC_DISABLE_ALL_MASK ^ (1 << IRQ_KEYBOARD));
+    out(PIC2_DATA, PIC_DISABLE_ALL_MASK);
 }
