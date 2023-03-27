@@ -7,6 +7,7 @@ CC            = gcc
 SOURCE_FOLDER = src
 OUTPUT_FOLDER = bin
 ISO_NAME      = OS2023
+DISK_NAME      = storage
 
 # Flags
 WARNING_CFLAG = -Wall -Wextra -Werror
@@ -62,3 +63,6 @@ iso: kernel
 	-o $(OUTPUT_FOLDER)/OS2023.iso              \
 	$(OUTPUT_FOLDER)/iso
 	@rm -r $(OUTPUT_FOLDER)/iso/
+
+disk:
+	@qemu-img create -f raw $(OUTPUT_FOLDER)/$(DISK_NAME).bin 4M
