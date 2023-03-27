@@ -48,10 +48,10 @@ void framebuffer_clear(void);
 uint16_t framebuffer_get_cursor(void);
 
 /* get row position of cursor */
-int framebuffer_get_row(void);
+uint8_t framebuffer_get_row(void);
 
 /* get col position of cursor */
-int framebuffer_get_col(void);
+uint8_t framebuffer_get_col(void);
 
 /* move cursor left */
 void framebuffer_move_cursor_left(void);
@@ -70,5 +70,8 @@ void framebuffer_move_cursor_most_left(void);
 
 /* move cursor most right*/
 void framebuffer_move_cursor_most_right(void);
+
+/* write current cursor */
+void framebuffer_write_curCursor(char c, uint8_t fg, uint8_t bg);
 
 #endif

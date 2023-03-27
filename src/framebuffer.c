@@ -20,7 +20,7 @@ void framebuffer_write(uint8_t row, uint8_t col, char c, uint8_t fg, uint8_t bg)
 }
 
 void framebuffer_clear(void) {
-    memset(MEMORY_FRAMEBUFFER, 0x00, BUFFER_WIDTH * BUFFER_HEIGHT * 2);
+    memset(MEMORY_FRAMEBUFFER, '\0', BUFFER_WIDTH * BUFFER_HEIGHT * 2);
 }
 
 /* get cursor position */
@@ -28,20 +28,20 @@ uint16_t framebuffer_get_cursor(void){
     uint16_t pos = 0;
     out(CURSOR_PORT_CMD, 0x0F);
     pos |= in(0x3D5);
-    out(CURSOR_PORT_DATA, 0x0E);
+    out(CURSOR_PORT_CMD, 0x0E);
     pos |= ((uint16_t) in(0x3D5)) << 8;
 
     return pos;
 }
 
 /* get row position of cursor */
-int framebuffer_get_row(void){
+uint8_t framebuffer_get_row(void){
     uint16_t pos = framebuffer_get_cursor();
     return pos / BUFFER_WIDTH;
 }
 
 /* get col position of cursor */
-int framebuffer_get_col(void){
+uint8_t framebuffer_get_col(void){
     uint16_t pos = framebuffer_get_cursor();
     return pos % BUFFER_WIDTH;
 }
@@ -94,3 +94,8 @@ void framebuffer_move_cursor_most_right(void){
     framebuffer_set_cursor(framebuffer_get_row(), BUFFER_WIDTH-1);
 }
 
+/* write current cursor */
+void framebuffer_write_curCursor(char c, uint8_t fg, uint8_t bg){
+    framebuffer_write(framebuffer_get_row(), framebuffer_get_col(),
+        c, fg, bg);
+}
