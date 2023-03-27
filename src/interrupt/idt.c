@@ -20,7 +20,7 @@ struct InterruptDescriptorTable interrupt_descriptor_table = {
             0,                              // privilege_level
             0,                              // valid_bit
             0,                              // offset_high
-        },
+        }
     }
 };
 
@@ -43,7 +43,7 @@ void initialize_idt(void) {
    * Segment: GDT_KERNEL_CODE_SEGMENT_SELECTOR
    * Privilege: 0
    */
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 64; i++) {
         set_interrupt_gate(i, isr_stub_table[i], GDT_KERNEL_CODE_SEGMENT_SELECTOR, 0);
     }
 
@@ -54,10 +54,10 @@ void initialize_idt(void) {
 void set_interrupt_gate(uint8_t int_vector, void *handler_address, uint16_t gdt_seg_selector, uint8_t privilege) {
     struct IDTGate *idt_int_gate = &interrupt_descriptor_table.table[int_vector];
     // TODO : Set handler offset, privilege & segment
-    idt_int_gate->offset_low = (int) handler_address & 0x0000FFFF;
+    idt_int_gate->offset_low = (uint16_t) ((uint32_t) handler_address) & 0xFFFF;
     idt_int_gate->segment = gdt_seg_selector;
     idt_int_gate->privilege_level = privilege;
-    idt_int_gate->offset_high = (int) handler_address & 0xFFFF0000;
+    idt_int_gate->offset_high = (uint16_t) (((uint32_t) handler_address) >> 16);
     
     // Target system 32-bit and flag this as valid interrupt gate
     idt_int_gate->_r_bit_1    = INTERRUPT_GATE_R_BIT_1;
