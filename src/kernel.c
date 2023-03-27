@@ -17,33 +17,34 @@ void kernel_setup(void) {
     // // Testing Frame Buffer
     // enter_protected_mode(&_gdt_gdtr);
     // framebuffer_clear();
-    // framebuffer_write(3, 8,  'H', 0, 0xF);
-    // framebuffer_write(3, 9,  'a', 0, 0xF);
-    // framebuffer_write(3, 10, 'i', 0, 0xF);
-    // framebuffer_write(3, 11, '!', 0, 0xF);
+    // framebuffer_write(3, 8,  'H', 0xF, 0);
+    // framebuffer_write(3, 9,  'a', 0xF, 0);
+    // framebuffer_write(3, 10, 'i', 0xF, 0);
+    // framebuffer_write(3, 11, '!', 0xF, 0);
     // framebuffer_set_cursor(3, 10);
     // while (TRUE);
 
     //=========================== Milestone 2 =======================
 
-    // Testing IDT and Interrupt
-    enter_protected_mode(&_gdt_gdtr);
-    pic_remap();
-    initialize_idt();
-    framebuffer_clear();
-    framebuffer_set_cursor(0, 0);
-    __asm__("int $0x4");
-    while (TRUE);
-
-    // // Testing Keyboard
+    // // Testing IDT and Interrupt
     // enter_protected_mode(&_gdt_gdtr);
     // pic_remap();
     // initialize_idt();
     // framebuffer_clear();
+    // // framebuffer_write(0,0, 'A', 0xF, 0);
     // framebuffer_set_cursor(0, 0);
-    // while (TRUE){
-    //     keyboard_state_activate();
-    // }
+    // __asm__("int $0x4");
+    // while (TRUE);
+
+    // Testing Keyboard
+    enter_protected_mode(&_gdt_gdtr);
+    pic_remap();
+    initialize_idt();
+    framebuffer_clear();
+    framebuffer_write(0,0, 'A', 0xF, 0);
+    while (TRUE){
+        keyboard_state_activate();
+    }
 
 }
 

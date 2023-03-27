@@ -1,6 +1,6 @@
-#include "lib-header/stdtype.h"
-#include "lib-header/fat32.h"
-#include "lib-header/stdmem.h"
+#include "../lib-header/stdtype.h"
+#include "../lib-header/fat32.h"
+#include "../lib-header/stdmem.h"
 
 const uint8_t fs_signature[BLOCK_SIZE] = {
     'C', 'o', 'u', 'r', 's', 'e', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',  ' ',
