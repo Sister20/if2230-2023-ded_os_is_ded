@@ -6,6 +6,8 @@
 #define MEMORY_FRAMEBUFFER (uint8_t *) 0xB8000
 #define CURSOR_PORT_CMD    0x03D4
 #define CURSOR_PORT_DATA   0x03D5
+#define BUFFER_WIDTH 80
+#define BUFFER_HEIGHT 25
 
 /**
  * Terminal framebuffer
@@ -41,5 +43,32 @@ void framebuffer_set_cursor(uint8_t r, uint8_t c);
  * 
  */
 void framebuffer_clear(void);
+
+/* get cursor position */
+uint16_t framebuffer_get_cursor(void);
+
+/* get row position of cursor */
+int framebuffer_get_row(void);
+
+/* get col position of cursor */
+int framebuffer_get_col(void);
+
+/* move cursor left */
+void framebuffer_move_cursor_left(void);
+
+/* move cursor right */
+void framebuffer_move_cursor_right(void);
+
+/* move cursor up */
+void framebuffer_move_cursor_up(void);
+
+/* move cursor down */
+void framebuffer_move_cursor_down(void);
+
+/* move cursor most left*/
+void framebuffer_move_cursor_most_left(void);
+
+/* move cursor most right*/
+void framebuffer_move_cursor_most_right(void);
 
 #endif
