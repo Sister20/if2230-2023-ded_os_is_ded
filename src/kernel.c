@@ -41,7 +41,8 @@ void kernel_setup(void) {
     pic_remap();
     initialize_idt();
     framebuffer_clear();
-    framebuffer_write(0,0, 'A', 0xF, 0);
+    framebuffer_write(0,0, ' ', 0xF, 0);
+    framebuffer_set_cursor(0,0);
     while (TRUE){
         keyboard_state_activate();
     }
