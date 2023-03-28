@@ -238,10 +238,5 @@ int8_t write(struct FAT32DriverRequest request);
  * @param request buf and buffer_size is unused
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
-int8_t delete(struct FAT32DriverRequest request) {
-    const int REQUEST_SUCCESS = 0;
-    const int REQUEST_NOT_A_FOLDER_RETURN = 1;
-    const int REQUEST_NOT_FOUND_RETURN = 2;
-    const int REQUEST_UNKNOWN = -1;
-}
+int8_t delete(struct FAT32DriverRequest request) ;
 
