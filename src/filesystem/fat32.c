@@ -13,6 +13,7 @@ const uint8_t fs_signature[BLOCK_SIZE] = {
 };
 
 struct FAT32DriverState driver_state;
+struct FAT32DriverRequest driver_request;
 
 /**
  * Convert cluster number to logical block address
@@ -31,12 +32,10 @@ uint32_t cluster_to_lba(uint32_t cluster){
  * @param parent_dir_cluster Parent directory cluster number
  */
 void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
-    for(int i = 0; i < 8; i++){
-        dir_table->table->name[i] = name[i];
-    }
+    memcpy(dir_table->table->name, name, 8);
     dir_table->table->cluster_low = (uint16_t) parent_dir_cluster;
     dir_table->table->cluster_high = (uint16_t) (parent_dir_cluster >> 16);
-
+    dir_table->table->attribute = ATTR_SUBDIRECTORY;
 }
 
 /**
