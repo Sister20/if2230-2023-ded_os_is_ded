@@ -21,9 +21,8 @@ struct FAT32DriverState driver_state;
  * @return uint32_t Logical Block Address
  */
 uint32_t cluster_to_lba(uint32_t cluster){
-    return cluster * CLUSTER_SIZE;
+    return cluster * CLUSTER_BLOCK_COUNT;
 }
-
 /**
  * Initialize DirectoryTable value with parent DirectoryEntry and directory name
  * 
@@ -48,7 +47,7 @@ void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uin
 bool is_empty_storage(void){
     struct BlockBuffer temp;
     read_blocks(temp.buf, BOOT_SECTOR, 1);
-    return !(memcmp(fs_signature, temp.buf, BLOCK_SIZE));
+    return (memcmp(fs_signature, temp.buf, BLOCK_SIZE) != 0);
 }
 
 /**
@@ -57,15 +56,17 @@ bool is_empty_storage(void){
  * and initialized root directory) into cluster number 1
  */
 void create_fat32(void){
-    driver_state.fat_table.cluster_map[0] = CLUSTER_0_VALUE;
-    driver_state.fat_table.cluster_map[1] = CLUSTER_1_VALUE;
-    driver_state.fat_table.cluster_map[2] = FAT32_FAT_END_OF_FILE;
+    
+    struct FAT32FileAllocationTable table;
+    table.cluster_map[0] = CLUSTER_0_VALUE;
+    table.cluster_map[1] = CLUSTER_1_VALUE;
+    table.cluster_map[2] = ROOT_CLUSTER_NUMBER;
 
     // write fs_signature into boot sector
-    write_blocks(fs_signature, cluster_to_lba(BOOT_SECTOR), CLUSTER_BLOCK_COUNT);
+    write_blocks(fs_signature, BOOT_SECTOR, 1);
 
     // write FAT cluster map to cluster number 1
-    write_blocks(driver_state.fat_table.cluster_map, cluster_to_lba(FAT_CLUSTER_NUMBER), CLUSTER_BLOCK_COUNT);
+    write_clusters(table.cluster_map, FAT_CLUSTER_NUMBER, 1);
 }
 
 /**
@@ -76,7 +77,7 @@ void initialize_filesystem_fat32(void){
     if (is_empty_storage()){
         create_fat32();
     } else {
-        read_blocks(driver_state.fat_table.cluster_map, cluster_to_lba(FAT_CLUSTER_NUMBER), CLUSTER_BLOCK_COUNT);
+        read_clusters(driver_state.fat_table.cluster_map, FAT_CLUSTER_NUMBER, 1);
     }
 }
 
@@ -88,7 +89,9 @@ void initialize_filesystem_fat32(void){
  * @param cluster_number Cluster number to write
  * @param cluster_count  Cluster count to write, due limitation of write_blocks block_count 255 => max cluster_count = 63
  */
-void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_count);
+void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_count){
+    write_blocks(ptr, cluster_to_lba(cluster_number), cluster_count*CLUSTER_BLOCK_COUNT);
+}
 
 /**
  * Read cluster operation, wrapper for read_blocks().
@@ -98,7 +101,9 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param cluster_number Cluster number to read
  * @param cluster_count  Cluster count to read, due limitation of read_blocks block_count 255 => max cluster_count = 63
  */
-void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count);
+void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
+    read_blocks(ptr, cluster_to_lba(cluster_number), cluster_count*CLUSTER_BLOCK_COUNT);
+}
 
 
 /* -- CRUD Operation -- */
@@ -113,7 +118,7 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count);
  *                buffer_size must be exactly sizeof(struct FAT32DirectoryTable)
  * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
  */
-int8_t read_directory(struct FAT32DriverRequest request)
+int8_t read_directory(struct FAT32DriverRequest request);
 
 
 /**

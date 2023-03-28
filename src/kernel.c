@@ -37,20 +37,25 @@ void kernel_setup(void) {
     // __asm__("int $0x4");
     // while (TRUE);
 
-    // Testing Keyboard
-    enter_protected_mode(&_gdt_gdtr);
-    pic_remap();
-    initialize_idt();
-    framebuffer_clear();
-    framebuffer_write(0,0, ' ', 0xF, 0);
-    framebuffer_set_cursor(0,0);
+    // // Testing Keyboard
+    // enter_protected_mode(&_gdt_gdtr);
+    // pic_remap();
+    // initialize_idt();
+    // framebuffer_clear();
+    // framebuffer_write(0,0, ' ', 0xF, 0);
+    // framebuffer_set_cursor(0,0);
+    // while (TRUE){
+    //     keyboard_state_activate();
+    // }
+
+
+    // File System
     initialize_filesystem_fat32();
-    struct FAT32DirectoryTable haha;
-    init_directory_table(&haha, "huhu", 0);
-    while (TRUE){
+    // struct FAT32DirectoryTable haha;
+    // init_directory_table(&haha, "huhu", 0);
+    while(TRUE){
         keyboard_state_activate();
     }
-
 }
 
 
