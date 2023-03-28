@@ -9,6 +9,16 @@ static void ATA_DRQ_wait() {
     while (!(in(0x1F7) & ATA_STATUS_RDY));
 }
 
+/**
+ * ATA PIO logical block address read blocks. Will blocking until read is completed.
+ * Note: ATA PIO will use 2-bytes per read/write operation.
+ * Recommended to use struct BlockBuffer
+ * 
+ * @param ptr                   Pointer for storing reading data, this pointer should point to already allocated memory location.
+ *                              With allocated size positive integer multiple of BLOCK_SIZE, ex: buf[1024]
+ * @param logical_block_address Block address to read data from. Use LBA addressing
+ * @param block_count           How many block to read, starting from block logical_block_address to lba-1
+ */
 void read_blocks(void *ptr, uint32_t logical_block_address, uint8_t block_count) {
     ATA_busy_wait();
     out(0x1F6, 0xE0 | ((logical_block_address >> 24) & 0xF));
@@ -30,6 +40,15 @@ void read_blocks(void *ptr, uint32_t logical_block_address, uint8_t block_count)
     }
 }
 
+/**
+ * ATA PIO logical block address write blocks. Will blocking until write is completed.
+ * Note: ATA PIO will use 2-bytes per read/write operation.
+ * Recommended to use struct BlockBuffer
+ *
+ * @param ptr                   Pointer to data that to be written into disk. Memory pointed should be positive integer multiple of BLOCK_SIZE
+ * @param logical_block_address Block address to write data into. Use LBA addressing
+ * @param block_count           How many block to write, starting from block logical_block_address to lba-1
+ */
 void write_blocks(const void *ptr, uint32_t logical_block_address, uint8_t block_count) {
     ATA_busy_wait();
     out(0x1F6, 0xE0 | ((logical_block_address >> 24) & 0xF));

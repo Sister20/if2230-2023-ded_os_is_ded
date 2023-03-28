@@ -7,6 +7,8 @@
 #include "lib-header/idt.h"
 #include "lib-header/interrupt.h"
 #include "lib-header/keyboard.h"
+#include "lib-header/disk.h"
+#include "lib-header/fat32.h"
 
 void kernel_setup(void) {
     // uint32_t a;
@@ -43,6 +45,7 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_write(0,0, ' ', 0xF, 0);
     framebuffer_set_cursor(0,0);
+    // initialize_filesystem_fat32();
     while (TRUE){
         keyboard_state_activate();
     }

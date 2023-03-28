@@ -20,7 +20,9 @@ struct FAT32DriverState driver_state;
  * @param cluster Cluster number to convert
  * @return uint32_t Logical Block Address
  */
-uint32_t cluster_to_lba(uint32_t cluster);
+uint32_t cluster_to_lba(uint32_t cluster){
+    return cluster * CLUSTER_SIZE;
+}
 
 /**
  * Initialize DirectoryTable value with parent DirectoryEntry and directory name
@@ -29,8 +31,14 @@ uint32_t cluster_to_lba(uint32_t cluster);
  * @param name               8-byte char for directory name
  * @param parent_dir_cluster Parent directory cluster number
  */
-void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster);
+void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
+    for(int i = 0; i < 8; i++){
+        dir_table->table->name[i] = name[i];
+    }
+    dir_table->table->cluster_low = (uint16_t) parent_dir_cluster;
+    dir_table->table->cluster_high = (uint16_t) (parent_dir_cluster >> 16);
 
+}
 
 /**
  * Checking whether filesystem signature is missing or not in boot sector
@@ -38,7 +46,9 @@ void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uin
  * @return True if memcmp(boot_sector, fs_signature) returning inequality
  */
 bool is_empty_storage(void){
-    return !(memcmp(&fs_signature, BOOT_SECTOR, sizeof(fs_signature)));
+    struct BlockBuffer temp;
+    read_blocks(temp.buf, BOOT_SECTOR, 1);
+    return !(memcmp(fs_signature, temp.buf, BLOCK_SIZE));
 }
 
 /**
@@ -47,11 +57,15 @@ bool is_empty_storage(void){
  * and initialized root directory) into cluster number 1
  */
 void create_fat32(void){
-    struct FAT32FileAllocationTable fatTable;
+    driver_state.fat_table.cluster_map[0] = CLUSTER_0_VALUE;
+    driver_state.fat_table.cluster_map[1] = CLUSTER_1_VALUE;
+    driver_state.fat_table.cluster_map[2] = FAT32_FAT_END_OF_FILE;
 
     // write fs_signature into boot sector
+    write_blocks(fs_signature, cluster_to_lba(BOOT_SECTOR), CLUSTER_BLOCK_COUNT);
 
-    //
+    // write FAT cluster map to cluster number 1
+    write_blocks(driver_state.fat_table.cluster_map, cluster_to_lba(FAT_CLUSTER_NUMBER), CLUSTER_BLOCK_COUNT);
 }
 
 /**
@@ -62,7 +76,7 @@ void initialize_filesystem_fat32(void){
     if (is_empty_storage()){
         create_fat32();
     } else {
-        
+        read_blocks(driver_state.fat_table.cluster_map, cluster_to_lba(FAT_CLUSTER_NUMBER), CLUSTER_BLOCK_COUNT);
     }
 }
 
@@ -85,4 +99,45 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param cluster_count  Cluster count to read, due limitation of read_blocks block_count 255 => max cluster_count = 63
  */
 void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count);
+
+
+/* -- CRUD Operation -- */
+
+/**
+ *  FAT32 Folder / Directory read
+ *
+ * @param request buf point to struct FAT32DirectoryTable,
+ *                name is directory name,
+ *                ext is unused,
+ *                parent_cluster_number is target directory table to read,
+ *                buffer_size must be exactly sizeof(struct FAT32DirectoryTable)
+ * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
+ */
+int8_t read_directory(struct FAT32DriverRequest request);
+
+
+/**
+ * FAT32 read, read a file from file system.
+ *
+ * @param request All attribute will be used for read, buffer_size will limit reading count
+ * @return Error code: 0 success - 1 not a file - 2 not enough buffer - 3 not found - -1 unknown
+ */
+int8_t read(struct FAT32DriverRequest request);
+
+/**
+ * FAT32 write, write a file or folder to file system.
+ *
+ * @param request All attribute will be used for write, buffer_size == 0 then create a folder / directory
+ * @return Error code: 0 success - 1 file/folder already exist - 2 invalid parent cluster - -1 unknown
+ */
+int8_t write(struct FAT32DriverRequest request);
+
+
+/**
+ * FAT32 delete, delete a file or empty directory (only 1 DirectoryEntry) in file system.
+ *
+ * @param request buf and buffer_size is unused
+ * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
+ */
+int8_t delete(struct FAT32DriverRequest request);
 
