@@ -27,7 +27,6 @@ void kernel_setup(void) {
     // while (TRUE);
 
     //=========================== Milestone 2 =======================
-
     // // Testing IDT and Interrupt
     // enter_protected_mode(&_gdt_gdtr);
     // pic_remap();
@@ -45,7 +44,9 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_write(0,0, ' ', 0xF, 0);
     framebuffer_set_cursor(0,0);
-    // initialize_filesystem_fat32();
+    initialize_filesystem_fat32();
+    struct FAT32DirectoryTable haha;
+    init_directory_table(&haha, "huhu", 0);
     while (TRUE){
         keyboard_state_activate();
     }
