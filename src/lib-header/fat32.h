@@ -245,4 +245,7 @@ uint32_t get_empty_cluster();
  */
 int8_t delete(struct FAT32DriverRequest request);
 
+
+void initialize_root(void);
+
 #endif
