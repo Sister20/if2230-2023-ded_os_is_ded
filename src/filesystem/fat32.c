@@ -279,7 +279,7 @@ int8_t read(struct FAT32DriverRequest request) {
     // load request parent to buffer
     read_clusters((void*) &driver_state.dir_table_buf, request.parent_cluster_number, 1);
 
-    bool parent_is_not_dir = driver_state.dir_table_buf.table[0].attribute == ATTR_SUBDIRECTORY;
+    bool parent_is_not_dir = driver_state.dir_table_buf.table[0].attribute != ATTR_SUBDIRECTORY;
     if (parent_is_not_dir) {
         return REQUEST_UNKNOWN_RETURN;
     }
@@ -346,7 +346,7 @@ int8_t write(struct FAT32DriverRequest request) {
     read_clusters((void*) &driver_state.dir_table_buf, request.parent_cluster_number, 1);
     read_clusters((void*) &driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
 
-    bool parent_is_not_dir = driver_state.dir_table_buf.table[0].attribute == ATTR_SUBDIRECTORY;
+    bool parent_is_not_dir = driver_state.dir_table_buf.table[0].attribute != ATTR_SUBDIRECTORY;
     if (parent_is_not_dir) {
         return REQUEST_UNKNOWN_RETURN;
     }
