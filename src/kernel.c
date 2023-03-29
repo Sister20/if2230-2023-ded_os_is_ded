@@ -49,7 +49,7 @@
 //     // }
 
 
-//     // File System
+//     // File System 3.3.3
 //     initialize_filesystem_fat32();
 //     // struct FAT32DirectoryTable haha;
 //     // init_directory_table(&haha, "huhu", 0);
@@ -67,9 +67,7 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
     framebuffer_write(0,0, ' ', 0xF, 0);
-    initialize_filesystem_fat32();
-    initialize_root();
-    
+    initialize_filesystem_fat32();  
     keyboard_state_activate();
 
     struct ClusterBuffer cbuf[5];
