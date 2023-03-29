@@ -1,7 +1,7 @@
 #ifndef _PORTIO_H
 #define _PORTIO_H
 
-#include "lib-header/stdtype.h"
+#include "stdtype.h"
 
 /** out:
  *  Sends the given data to the given I/O port

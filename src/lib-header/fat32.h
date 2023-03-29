@@ -235,6 +235,7 @@ int8_t read(struct FAT32DriverRequest request);
  */
 int8_t write(struct FAT32DriverRequest request);
 
+uint32_t get_empty_cluster();
 
 /**
  * FAT32 delete, delete a file or empty directory (only 1 DirectoryEntry) in file system.
