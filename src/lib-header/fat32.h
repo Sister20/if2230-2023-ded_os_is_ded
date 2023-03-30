@@ -248,4 +248,6 @@ int8_t delete(struct FAT32DriverRequest request);
 
 void initialize_root(void);
 
+void reset_entry(struct FAT32DirectoryEntry *entry);
+
 #endif

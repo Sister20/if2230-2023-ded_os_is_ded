@@ -69,7 +69,6 @@ void kernel_setup(void) {
     framebuffer_write(0,0, ' ', 0xF, 0);
     initialize_filesystem_fat32();
     keyboard_state_activate();
-
     struct ClusterBuffer cbuf[5];
     for (uint32_t i = 0; i < 5; i++)
         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
@@ -84,24 +83,22 @@ void kernel_setup(void) {
     } ;
 
     write(request);  // Create folder "ikanaide"
+    
     memcpy(request.name, "kano1\0\0\0", 8);
     write(request);  // Create folder "kano1"
-    memcpy(request.name, "ikanaide", 8);
-    // delete(request); // Delete first folder, thus creating hole in FS
+    
+    struct FAT32DriverRequest request2 = {
+        .buf                   = cbuf,
+        .name                  = "kano2",
+        .ext                   = "uwu",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER+1, //ikanaide
+        .buffer_size           = 0,
+    };
 
-    memcpy(request.name, "daijoubu", 8);
-    request.buffer_size = 5*CLUSTER_SIZE;
-    write(request);  // Create fragmented file "daijoubu"
-    // delete(request);
+    write(request2);
+    delete(request2); // Delete folder "kano2"
 
-    // struct ClusterBuffer readcbuf;
-    // read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER+1, 1);
-    // // If read properly, readcbuf should filled with 'a'
-
-    // request.buffer_size = CLUSTER_SIZE;
-    // read(request);   // Failed read due not enough buffer size
-    // request.buffer_size = 5*CLUSTER_SIZE;
-    // read(request);   // Success read on file "daijoubu"
-
-    while (TRUE);
+    memcpy(request2.name, "kano3\0\0\0", 8);
+    request2.buffer_size = 5 * CLUSTER_SIZE;
+    write(request2);
 }
