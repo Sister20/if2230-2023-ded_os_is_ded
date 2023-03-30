@@ -384,22 +384,24 @@ int8_t delete(struct FAT32DriverRequest request) {
                 // PERLU DIBENERIN
                 uint32_t deleted_cluster_number = ((uint32_t) current.cluster_high) << 16 | current.cluster_low;
                 while (driver_state.fat_table.cluster_map[deleted_cluster_number] != FAT32_FAT_END_OF_FILE) {
+                    uint32_t temp_cluster = deleted_cluster_number;
                     memcpy(driver_state.dir_table_buf.table[i].name, "\0\0\0\0\0\0\0\0", 8);
                     memcpy(driver_state.dir_table_buf.table[i].ext, "\0\0\0", 3);
                     driver_state.dir_table_buf.table[i].undelete = 0;
                     struct FAT32DirectoryTable empty = {0};
                     write_clusters(&empty, deleted_cluster_number, 1);
-                    deleted_cluster_number = driver_state.fat_table.cluster_map[deleted_cluster_number];
-                    driver_state.fat_table.cluster_map[deleted_cluster_number] = FAT32_FAT_EMPTY_ENTRY;
+                    deleted_cluster_number = driver_state.fat_table.cluster_map[temp_cluster];
+                    driver_state.fat_table.cluster_map[temp_cluster] = FAT32_FAT_EMPTY_ENTRY;
 
                 }
-                if (driver_state.fat_table.cluster_map[i] == FAT32_FAT_END_OF_FILE) {
-                    driver_state.fat_table.cluster_map[i] = FAT32_FAT_EMPTY_ENTRY;
+                if (driver_state.fat_table.cluster_map[deleted_cluster_number] == FAT32_FAT_END_OF_FILE) {
+                    driver_state.fat_table.cluster_map[deleted_cluster_number] = FAT32_FAT_EMPTY_ENTRY;
                     memcpy(driver_state.dir_table_buf.table[i].name, "\0\0\0\0\0\0\0\0", 8);
                     memcpy(driver_state.dir_table_buf.table[i].ext, "\0\0\0", 3);
                     driver_state.dir_table_buf.table[i].undelete = 0;
                     struct FAT32DirectoryTable empty = {0};
                     write_clusters(&empty, deleted_cluster_number, 1);
+                    driver_state.fat_table.cluster_map[deleted_cluster_number] = FAT32_FAT_EMPTY_ENTRY;
                 }
                 write_clusters(&driver_state.dir_table_buf.table, request.parent_cluster_number, 1);
                 write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
