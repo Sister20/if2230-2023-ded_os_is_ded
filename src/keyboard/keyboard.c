@@ -86,13 +86,6 @@ void keyboard_isr(void) {
                 framebuffer_write_curCursor(' ', 0xF, 0);
             }
 
-            // for (int i = 0; i < keyboard_state.buffer_index; i++){
-            //     framebuffer_write(framebuffer_get_row(), i, 
-            //         keyboard_state.keyboard_buffer[i], 0xF, 0
-            //         );
-            // }
-            // framebuffer_set_cursor(framebuffer_get_row(), keyboard_state.buffer_index);
-            // framebuffer_write_curCursor(' ', 0xF, 0);
         }
         pic_ack(IRQ_KEYBOARD);
     }

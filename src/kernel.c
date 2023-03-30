@@ -66,9 +66,9 @@ void kernel_setup(void) {
     activate_keyboard_interrupt();
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
-    framebuffer_write(0,0, ' ', 0xF, 0);
     initialize_filesystem_fat32();
     keyboard_state_activate();
+
     struct ClusterBuffer cbuf[5];
     for (uint32_t i = 0; i < 5; i++)
         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
@@ -83,22 +83,98 @@ void kernel_setup(void) {
     } ;
 
     write(request);  // Create folder "ikanaide"
-    
     memcpy(request.name, "kano1\0\0\0", 8);
     write(request);  // Create folder "kano1"
-    
-    struct FAT32DriverRequest request2 = {
-        .buf                   = cbuf,
-        .name                  = "kano2",
-        .ext                   = "uwu",
-        .parent_cluster_number = ROOT_CLUSTER_NUMBER+1, //ikanaide
-        .buffer_size           = 0,
-    };
+    memcpy(request.name, "ikanaide", 8);
+    delete(request); // Delete first folder, thus creating hole in FS
 
-    write(request2);
-    elete(request2); // Delete folder "kano2"
+    memcpy(request.name, "daijoubu", 8);
+    request.buffer_size = 5*CLUSTER_SIZE;
+    write(request);  // Create fragmented file "daijoubu"
 
-    memcpy(request2.name, "kano3\0\0\0", 8);
-    request2.buffer_size = 5 * CLUSTER_SIZE;
-    write(request2);
+    struct ClusterBuffer readcbuf;
+    read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER+1, 1); 
+    // If read properly, readcbuf should filled with 'a'
+
+    request.buffer_size = CLUSTER_SIZE;
+    read(request);   // Failed read due not enough buffer size
+    request.buffer_size = 5*CLUSTER_SIZE;
+    read(request);   // Success read on file "daijoubu"
+
+    while (TRUE);
 }
+
+
+// kernel for testing filesystem
+// void kernel_setup(void) {
+//     enter_protected_mode(&_gdt_gdtr);
+//     pic_remap();
+//     initialize_idt();
+//     activate_keyboard_interrupt();
+//     framebuffer_clear();
+//     framebuffer_set_cursor(0, 0);
+//     framebuffer_write(0,0, ' ', 0xF, 0);
+//     initialize_filesystem_fat32();
+//     keyboard_state_activate();
+
+//     struct ClusterBuffer cbuf[5];
+//     for (uint32_t i = 0; i < 5; i++)
+//         for (uint32_t j = 0; j < CLUSTER_SIZE; j++)
+//             cbuf[i].buf[j] = i + 'a';
+
+//     struct FAT32DriverRequest request = {
+//         .buf                   = cbuf,
+//         .name                  = "ikanaide",
+//         .ext                   = "uwu",
+//         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+//         .buffer_size           = 0,
+//     } ;
+
+//     write(request);  // Create folder "ikanaide"
+//     memcpy(request.name, "kano1\0\0\0", 8);
+//     write(request);  // Create folder "kano1"
+//     memcpy(request.name, "ikanaide", 8);
+//     // delete(request); // Delete first folder, thus creating hole in FS
+
+//     memcpy(request.name, "daijoubu", 8);
+//     request.buffer_size = 5*CLUSTER_SIZE;
+//     write(request);  // Create fragmented file "daijoubu"
+//     // delete(request);
+//     memcpy(request.name, "kano1\0\0\0", 8);
+//     delete(request);
+
+//     struct ClusterBuffer readcbuf;
+//     read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER+1, 1);
+//     // If read properly, readcbuf should filled with 'a'
+
+//     memcpy(request.name, "daijoubu", 8);
+
+//     uint8_t temp;
+//     char * temp1 = request.buf;
+//     char * temp2 = (char*) request.buf + CLUSTER_SIZE;
+//     char * temp3 = (char*) request.buf + 2*CLUSTER_SIZE;
+//     char * temp4 = (char*) request.buf + 3*CLUSTER_SIZE;
+
+//     request.buffer_size = CLUSTER_SIZE;
+//     temp = read(request);   // Failed read due not enough buffer size
+//     request.buffer_size = 5*CLUSTER_SIZE;
+//     temp =  read(request);   // Success read on file "daijoubu"
+    
+
+//     request.parent_cluster_number = ROOT_CLUSTER_NUMBER;
+//     memcpy(request.name, "ikanaide", 8);
+//     request.buffer_size = CLUSTER_SIZE;
+//     temp = read_directory(request);
+//     struct FAT32DirectoryTable* p = request.buf;
+
+    
+    
+//     write_clusters(&temp, 11, 1);
+//     write_clusters(temp1, 11, 1);
+//     write_clusters(temp2, 11, 1);
+//     write_clusters(temp3, 11, 1);
+//     write_clusters(temp4, 11, 1);
+//     write_clusters(p, 11, 1);
+
+//     while (TRUE);
+// }

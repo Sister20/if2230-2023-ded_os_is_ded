@@ -225,7 +225,6 @@ uint32_t get_empty_cluster() {
 }
 
 
-
 int8_t write(struct FAT32DriverRequest request) {
     const int REQUEST_SUCCESS_RETURN = 0;
     const int REQUEST_FILE_ALREADY_EXIST_RETURN = 1;
@@ -347,21 +346,11 @@ int8_t delete(struct FAT32DriverRequest request) {
         struct FAT32DirectoryEntry current = driver_state.dir_table_buf.table[i];
         if (memcmp(current.name, request.name, 8) == 0 && memcmp(current.ext, request.ext, 3) == 0) {
             if (current.attribute == ATTR_SUBDIRECTORY) {
-                // int fileExist = 0;
-                // for (int j = 0; j < dir_length; j++) {
-                //     struct FAT32DirectoryEntry current_check = driver_state.dir_table_buf.table[j];
-                //     if (current_check.undelete != 0) {
-                //         fileExist = 1;
-                //         break;
-                //     }
-                // }
-
-                // if (fileExist == 1) 
                 if (current.user_attribute == UATTR_NOT_EMPTY){
                     return FOLDER_NOT_EMPTY_RETURN;
                 } else {
                     // HAPUS FOLDER
-                    uint32_t deleted_cluster_number = ((uint32_t) current.cluster_high << 16) | current.cluster_low;
+                    uint32_t deleted_cluster_number = ((uint32_t) current.cluster_high) << 16 | current.cluster_low;
                     driver_state.fat_table.cluster_map[deleted_cluster_number] = FAT32_FAT_EMPTY_ENTRY;
                     reset_entry(&driver_state.dir_table_buf.table[i]);
                     struct FAT32DirectoryTable empty = {0};
@@ -404,15 +393,7 @@ void initialize_root(void){
     struct FAT32DirectoryTable root = {0};
     init_directory_table(&root, "root\0\0\0\0", ROOT_CLUSTER_NUMBER);
     root.table[0].attribute = ATTR_SUBDIRECTORY;
-    memcpy(root.table->ext, "dir", 3);
-    // memcpy(root.name,"root\0\0\0\0",8);
-    // memcpy(root.ext,"dir",3);
-    
-    // root.user_attribute = 0;
-    // root.filesize = 0;
-    // root.cluster_high = (uint16_t) (ROOT_CLUSTER_NUMBER >> 16);
-    // root.cluster_low = (uint16_t) ROOT_CLUSTER_NUMBER;
-    // root.undelete = TRUE;
+    memcpy(root.table[0].ext, "dir", 3);
 
     // save to memory?
     write_clusters(&root, ROOT_CLUSTER_NUMBER, 1);
