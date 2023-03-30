@@ -96,7 +96,7 @@ void kernel_setup(void) {
     };
 
     write(request2);
-    delete(request2); // Delete folder "kano2"
+    elete(request2); // Delete folder "kano2"
 
     memcpy(request2.name, "kano3\0\0\0", 8);
     request2.buffer_size = 5 * CLUSTER_SIZE;
