@@ -129,7 +129,7 @@ int8_t read_directory(struct FAT32DriverRequest request) {
     read_clusters((void*) &driver_state.dir_table_buf, request.parent_cluster_number, 1);
 
     /* check if parent is dir*/
-    bool parent_is_not_dir = driver_state.dir_table_buf.table[0].attribute == ATTR_SUBDIRECTORY;
+    bool parent_is_not_dir = driver_state.dir_table_buf.table[0].attribute != ATTR_SUBDIRECTORY;
     if (parent_is_not_dir) {
         return REQUEST_UNKNOWN_RETURN;
     }
@@ -409,10 +409,11 @@ int8_t delete(struct FAT32DriverRequest request) {
 void initialize_root(void){
     struct FAT32DirectoryTable root = {0};
     init_directory_table(&root, "root\0\0\0\0", ROOT_CLUSTER_NUMBER);
+    root.table[0].attribute = ATTR_SUBDIRECTORY;
     memcpy(root.table->ext, "dir", 3);
     // memcpy(root.name,"root\0\0\0\0",8);
     // memcpy(root.ext,"dir",3);
-    // root.attribute = ATTR_SUBDIRECTORY;
+    
     // root.user_attribute = 0;
     // root.filesize = 0;
     // root.cluster_high = (uint16_t) (ROOT_CLUSTER_NUMBER >> 16);
