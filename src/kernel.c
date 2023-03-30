@@ -67,7 +67,7 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
     framebuffer_write(0,0, ' ', 0xF, 0);
-    initialize_filesystem_fat32();  
+    initialize_filesystem_fat32();
     keyboard_state_activate();
 
     struct ClusterBuffer cbuf[5];
@@ -92,15 +92,16 @@ void kernel_setup(void) {
     memcpy(request.name, "daijoubu", 8);
     request.buffer_size = 5*CLUSTER_SIZE;
     write(request);  // Create fragmented file "daijoubu"
+    delete(request);
 
-    struct ClusterBuffer readcbuf;
-    read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER+1, 1); 
-    // If read properly, readcbuf should filled with 'a'
+    // struct ClusterBuffer readcbuf;
+    // read_clusters(&readcbuf, ROOT_CLUSTER_NUMBER+1, 1);
+    // // If read properly, readcbuf should filled with 'a'
 
-    request.buffer_size = CLUSTER_SIZE;
-    read(request);   // Failed read due not enough buffer size
-    request.buffer_size = 5*CLUSTER_SIZE;
-    read(request);   // Success read on file "daijoubu"
+    // request.buffer_size = CLUSTER_SIZE;
+    // read(request);   // Failed read due not enough buffer size
+    // request.buffer_size = 5*CLUSTER_SIZE;
+    // read(request);   // Success read on file "daijoubu"
 
     while (TRUE);
 }
