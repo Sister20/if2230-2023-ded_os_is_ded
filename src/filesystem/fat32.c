@@ -239,15 +239,17 @@ int8_t write(struct FAT32DriverRequest request) {
     const int REQUEST_INVALID_PARENT_RETURN = 2;
     const int REQUEST_UNKNOWN_RETURN = -1;
 
-    // load request parent to table buffer, load fat table
+    /*load request parent to table buffer, load fat table */
     read_clusters((void*) &driver_state.dir_table_buf, request.parent_cluster_number, 1);
     read_clusters((void*) &driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
 
+    /* check if parent is directory */
     bool parent_is_not_dir = driver_state.dir_table_buf.table[0].attribute != ATTR_SUBDIRECTORY;
     if (parent_is_not_dir) {
         return REQUEST_INVALID_PARENT_RETURN;
     }
 
+    /* check if file with same name already exist*/
     int dir_length = sizeof(struct FAT32DirectoryTable)/sizeof(struct FAT32DirectoryEntry);
     for (int i = 1; i < dir_length; i++) {
         struct FAT32DirectoryEntry current_entry = driver_state.dir_table_buf.table[i];
@@ -259,19 +261,19 @@ int8_t write(struct FAT32DriverRequest request) {
         }
     }
 
+    /* check if number of cluster avail in storage suffice */
     uint32_t num_cluster_needed = ((request.buffer_size)% CLUSTER_SIZE) == 0 ? ((request.buffer_size)/ CLUSTER_SIZE): ((request.buffer_size)/ CLUSTER_SIZE) +1; 
     uint32_t num_cluster_avail = 0;
-
     for (int i = 2; i < CLUSTER_MAP_SIZE && num_cluster_avail < num_cluster_needed; i++) {
         if (driver_state.fat_table.cluster_map[i] == FAT32_FAT_EMPTY_ENTRY) {
             num_cluster_avail++;
         }
     }
-
     if (num_cluster_avail < num_cluster_needed) {
         return REQUEST_UNKNOWN_RETURN;
     }
 
+    /* check for entry avail in parent*/
     int entry_num = -1;
     for (int i = 1; i < dir_length && entry_num == -1; i++) {
         if (driver_state.dir_table_buf.table[i].undelete == 0) {
@@ -282,78 +284,40 @@ int8_t write(struct FAT32DriverRequest request) {
         return REQUEST_UNKNOWN_RETURN;
     }
 
-    
+    uint32_t cluster_num_to_write =  get_empty_cluster();
+    struct FAT32DirectoryEntry request_entry = {0};
+    request_entry.user_attribute = 0;
+    request_entry.cluster_high = (uint16_t) (cluster_num_to_write  >> 16);
+    request_entry.cluster_low = (uint16_t) cluster_num_to_write;
+    memcpy(request_entry.ext, request.ext, 3);
+    memcpy(request_entry.name, request.name, 8);
+    request_entry.undelete = 1;
+    driver_state.dir_table_buf.table[0].user_attribute = UATTR_NOT_EMPTY;
+
+
     if (request.buffer_size == 0) { 
-        // Create a new dir
+        /* create new directory */
+        request_entry.attribute = ATTR_SUBDIRECTORY;
+        driver_state.dir_table_buf.table[entry_num]  = request_entry;
+
         struct FAT32DirectoryTable request_directory_table = {0};
         init_directory_table(&request_directory_table, request.name, 
                                 request.parent_cluster_number);
-        uint32_t cluster_num_to_write =  get_empty_cluster();
 
-        struct FAT32DirectoryEntry request_entry = {0};
-        // request_entry acc date,
-        request_entry.attribute = ATTR_SUBDIRECTORY;
-        request_entry.user_attribute = 0;
-        request_entry.cluster_high = (uint16_t) (cluster_num_to_write  >> 16);
-        request_entry.cluster_low = (uint16_t) cluster_num_to_write;
-        memcpy(request_entry.ext, request.ext, 3);
-        memcpy(request_entry.name, request.name, 8);
-        request_entry.undelete = 1;
-
-        driver_state.fat_table.cluster_map[cluster_num_to_write] = FAT32_FAT_END_OF_FILE;
-        int i = 1;
-        bool found = FALSE;
-        while ( i < CLUSTER_MAP_SIZE && !found){
-            if (driver_state.dir_table_buf.table[i].undelete != 1){
-                driver_state.dir_table_buf.table[i] = request_entry;
-                if(driver_state.dir_table_buf.table[0].user_attribute != UATTR_NOT_EMPTY){
-                    driver_state.dir_table_buf.table[0].user_attribute = UATTR_NOT_EMPTY;
-                }
-                found = TRUE;
-            }
-            i++;
-        }
-        if (!found){
-            driver_state.dir_table_buf.table[1] = request_entry;
-        }
         write_clusters(&request_directory_table, cluster_num_to_write, 1);
-        
-        // update at storage
         write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
         write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
     } else {
-        // Create A File
-        struct FAT32DirectoryEntry request_entry = {0};
-        uint32_t cluster_num_to_write =  get_empty_cluster();
-        request_entry.cluster_high = (uint16_t) cluster_num_to_write  >> 16;
-        request_entry.cluster_low = (uint16_t) cluster_num_to_write;
-        memcpy(request_entry.ext, request.ext, 3);
-        memcpy(request_entry.name, request.name, 8);
-        request_entry.undelete = 1;
-
-        // write_clusters(&request.buf, cluster_num_to_write, 1);
-
-        int i = 1;
-        bool found = FALSE;
-        while ( i < CLUSTER_MAP_SIZE && !found){
-            if (driver_state.dir_table_buf.table[i].undelete != 1){
-                driver_state.dir_table_buf.table[i] = request_entry;
-                if(driver_state.dir_table_buf.table[0].user_attribute != UATTR_NOT_EMPTY){
-                    driver_state.dir_table_buf.table[0].user_attribute = UATTR_NOT_EMPTY;
-                }
-                found = TRUE;
-            }
-            i++;
-        }
-        if (!found){
-            driver_state.dir_table_buf.table[1] = request_entry;
-        }
+        /* write file */
+        request_entry.attribute = !ATTR_SUBDIRECTORY;
+        driver_state.dir_table_buf.table[entry_num]  = request_entry;     
         
+        write_clusters(request.buf, cluster_num_to_write, 1);
         for (uint32_t j = 1; j < num_cluster_needed; j++) {
             uint32_t next_cluster_num_to_write = get_empty_cluster();
             driver_state.fat_table.cluster_map[cluster_num_to_write] = next_cluster_num_to_write;
-            int offset = CLUSTER_SIZE*(j-1);
-            write_clusters((char*) request.buf + offset, cluster_num_to_write, 1);
+            int offset = CLUSTER_SIZE*(j);
+            write_clusters((char*) request.buf + offset, next_cluster_num_to_write, 1);
             cluster_num_to_write = next_cluster_num_to_write;
         }
         write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
