@@ -176,5 +176,15 @@ void kernel_setup(void) {
 //     write_clusters(temp4, 11, 1);
 //     write_clusters(p, 11, 1);
 
+
+    // memcpy(request.name, "hehehehe", 8);
+    // write(request);
+
+    // request.buffer_size = CLUSTER_SIZE;
+    // memcpy(request.name, "kano1\0\0\0", 8);
+    // read_directory(request);
+    // memcpy(request.name, "xixixixi", 8);
+    // write(request);
+
 //     while (TRUE);
 // }
