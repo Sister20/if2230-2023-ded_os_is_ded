@@ -9,6 +9,7 @@
 #include "lib-header/keyboard.h"
 #include "lib-header/disk.h"
 #include "lib-header/fat32.h"
+#include "lib-header/paging.h"
 
 // void kernel_setup(void) {
 //     // uint32_t a;
