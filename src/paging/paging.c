@@ -36,7 +36,6 @@ int8_t allocate_single_user_page_frame(void *virtual_addr) {
     // Available physical address yang bisa dimap oleh mapper ini
     uint32_t next_physical_addr = last_physical_addr + PAGE_FRAME_SIZE;
 
-    // Kita cek kalau misalnya udah melebihi 128 MiB (QEMU default), kita return -1
     if (next_physical_addr >= (128 * 1024 * 1024)) {
         return -1;
     }

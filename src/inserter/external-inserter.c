@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../lib-header/stdtype.h"
 
 // Usual gcc fixed width integer type 
 typedef u_int32_t uint32_t;
