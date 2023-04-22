@@ -35,7 +35,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             1,                              // non_system - S
             0,                              // privilege_level - DPL
             1,                              // segment_present - P
-            0,                              // segment_lim 
+            (char) 0xF,                     // segment_lim 
             0,                              // available_sys_soft - AVL
             0,                              // bit_code_segment - L
             1,                              // def_operation - D/B
@@ -51,7 +51,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             1,                              // non_system - S
             0,                              // privilege_level - DPL
             1,                              // segment_present - P
-            0,                              // segment_lim 
+            (char) 0xF,                      // segment_lim 
             0,                              // available_sys_soft - AVL
             0,                              // bit_code_segment - L
             1,                              // def_operation - D/B
@@ -67,7 +67,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             1,                              // non_system - S
             0x3,                            // privilege_level - DPL
             1,                              // segment_present - P
-            0,                              // segment_lim 
+            (char) 0xF,                      // segment_lim 
             0,                              // available_sys_soft - AVL
             0,                              // bit_code_segment - L
             1,                              // def_operation - D/B
@@ -83,7 +83,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             1,                              // non_system - S
             0x3,                            // privilege_level - DPL
             1,                              // segment_present - P
-            0,                              // segment_lim 
+            (char) 0xF,                      // segment_lim 
             0,                              // available_sys_soft - AVL
             0,                              // bit_code_segment - L
             1,                              // def_operation - D/B
