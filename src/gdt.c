@@ -8,7 +8,7 @@
  */
 struct GlobalDescriptorTable global_descriptor_table = {
     .table = {
-        {
+        {   // Null Descriptor
             // TODO : Implement
             0,                              // segment_low
             0,                              // base_low
@@ -25,7 +25,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             0                               // base_high
 
         },
-        {
+        {   // Kernel Code Descriptor
             // TODO : Implement
             (uint16_t) 0xFFFFF,             // segment_low
             0,                              // base_low
@@ -41,7 +41,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             1,                              // granularity - G
             0                               // base_high
         },
-        {
+        {   // Kernel Data Descriptor
             // TODO : Implement
             (uint16_t) 0xFFFFF,             // segment_low
             0,                              // base_low
@@ -56,7 +56,43 @@ struct GlobalDescriptorTable global_descriptor_table = {
             1,                              // def_operation - D/B
             1,                              // granularity - G
             0                               // base_high
-        }
+        },
+        {   // User Code Descriptor
+            (uint16_t) 0xFFFFF,             // segment_low
+            0,                              // base_low
+            0,                              // base_mid
+            0x2,                            // type_bit
+            1,                              // non_system - S
+            0,                              // privilege_level - DPL
+            1,                              // segment_present - P
+            0,                              // segment_lim 
+            0,                              // available_sys_soft - AVL
+            0,                              // bit_code_segment - L
+            1,                              // def_operation - D/B
+            1,                              // granularity - G
+            0                               // base_high
+        },
+        // {   // User Data Descriptor
+
+        // },
+        // {  // TSS Selector
+        //     .segment_low       = sizeof(struct TSSEntry),
+        //     .base_low          = 0,
+
+        //     .base_mid          = 0,
+        //     .type_bit          = 0x9,
+        //     .non_system        = 0,    // S bit
+
+        //     .privilege         = 0,    // DPL
+        //     .valid_bit         = 1,    // P bit
+
+        //     .segment_high      = (sizeof(struct TSSEntry) & (0xF << 16)) >> 16,
+        //     .long_mode         = 0,    // L bit
+        //     .opr_32_bit        = 1,    // D/B bit
+        //     .granularity       = 0,    // G bit
+        //     .base_high         = 0,
+        // },
+        // {0}
     }
 };
 

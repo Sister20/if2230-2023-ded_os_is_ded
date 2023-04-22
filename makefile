@@ -67,3 +67,9 @@ iso: kernel
 
 disk:
 	@qemu-img create -f raw $(OUTPUT_FOLDER)/$(DISK_NAME).bin 4M
+
+inserter:
+	@$(CC) -Wno-builtin-declaration-mismatch -g \
+		$(SOURCE_FOLDER)/stdmem.c $(SOURCE_FOLDER)/filesystem/fat32.c \
+		$(SOURCE_FOLDER)/inserter/external-inserter.c \
+		-o $(OUTPUT_FOLDER)/inserter

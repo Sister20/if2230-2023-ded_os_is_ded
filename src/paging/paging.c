@@ -33,12 +33,29 @@ int8_t allocate_single_user_page_frame(void *virtual_addr) {
     // Using default QEMU config (128 MiB max memory)
     uint32_t last_physical_addr = (uint32_t) page_driver_state.last_available_physical_addr;
 
-    // TODO : Allocate Page Directory Entry with user privilege
-    *virtual_addr = last_physical_addr << 22;
+    // Available physical address yang bisa dimap oleh mapper ini
+    uint32_t next_physical_addr = last_physical_addr + PAGE_FRAME_SIZE;
 
-    return -1;
+    // Kita cek kalau misalnya udah melebihi 128 MiB (QEMU default), kita return -1
+    if (next_physical_addr >= (128 * 1024 * 1024)) {
+        return -1;
+    }
+
+    uint8_t *physical_addr = (uint8_t*) last_physical_addr;
+    page_driver_state.last_available_physical_addr += PAGE_FRAME_SIZE;
+
+    // Update flags
+    struct PageDirectoryEntryFlag flags = {
+        .present_bit = 1,
+        .write_bit = 1,
+        .supervisor_bit = 1,
+        .use_pagesize_4_mb = 1
+    };
+
+    update_page_directory_entry(physical_addr, virtual_addr, flags);
+
+    return 0;
 }
-
 void flush_single_tlb(void *virtual_addr) {
     asm volatile("invlpg (%0)" : /* <Empty> */ : "b"(virtual_addr): "memory");
 }

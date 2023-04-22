@@ -20,24 +20,24 @@ extern struct GDTR _gdt_gdtr;
  */
 struct SegmentDescriptor {
     // First 32-bit
-    uint16_t segment_low : 16;
-    uint16_t base_low : 16;
+    uint16_t segment_low : 16;          // 0-15  
+    uint16_t base_low : 16;             // 16-31
 
     // Next 16-bit (Bit 32 to 47)
-    uint8_t base_mid : 8;
-    uint8_t type_bit   : 4;
-    uint8_t non_system : 1;
+    uint8_t base_mid : 8;               //32-39
+    uint8_t type_bit   : 4;             // 40-47
+    uint8_t non_system : 1;             // 40-47
         
-    uint8_t privilege_level  : 2;
-    uint8_t segment_present : 1;
+    uint8_t privilege  : 2;             // 40-47
+    uint8_t valid_bit : 1;              // 40 -47
     
     // Last 16-bit
-    uint8_t segment_lim : 4;
-    uint8_t available_sys_soft : 1;
-    uint8_t bit_code_segment : 1;
-    uint8_t def_operation : 1;
-    uint8_t granularity : 1;
-    uint8_t base_high : 8;
+    uint8_t segment_high : 4;           // 48-51
+    uint8_t available_sys_soft : 1;     // flags 0 | 52- 55
+    uint8_t long_mode : 1;              // flags 1
+    uint8_t opr_32_bit : 1;             // flags 2
+    uint8_t granularity : 1;            // flags 3 | 52 -55
+    uint8_t base_high : 8;              // 56-63
 
 
 } __attribute__((packed));
@@ -62,5 +62,13 @@ struct GDTR {
     uint16_t                     size;
     struct GlobalDescriptorTable *address;
 } __attribute__((packed));
+
+#define GDT_USER_CODE_SEGMENT_SELECTOR   0x18
+#define GDT_USER_DATA_SEGMENT_SELECTOR   0x20
+#define GDT_TSS_SELECTOR                 0x28
+
+// Set GDT_TSS_SELECTOR with proper TSS values, accessing _interrupt_tss_entry
+void gdt_install_tss(void);
+
 
 #endif
