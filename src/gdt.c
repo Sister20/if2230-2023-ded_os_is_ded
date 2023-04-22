@@ -65,7 +65,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             0,                              // base_mid
             0xA,                            // type_bit
             1,                              // non_system - S
-            0x3,                              // privilege_level - DPL
+            0x3,                            // privilege_level - DPL
             1,                              // segment_present - P
             0,                              // segment_lim 
             0,                              // available_sys_soft - AVL
@@ -81,7 +81,7 @@ struct GlobalDescriptorTable global_descriptor_table = {
             0,                              // base_mid
             0x2,                            // type_bit
             1,                              // non_system - S
-            0x3,                              // privilege_level - DPL
+            0x3,                            // privilege_level - DPL
             1,                              // segment_present - P
             0,                              // segment_lim 
             0,                              // available_sys_soft - AVL
