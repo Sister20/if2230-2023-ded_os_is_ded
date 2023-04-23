@@ -1,6 +1,13 @@
- #include "lib-header/interrupt.h"
+#include "lib-header/interrupt.h"
 #include "lib-header/keyboard.h"
 #include "../lib-header/portio.h"
+#include "../lib-header/framebuffer.h"
+#include "../lib-header/fat32.h"
+#include "../lib-header/stdmem.h"
+
+
+
+#define GDT_KERNEL_DATA_SEGMENT_SELECTOR 0x10
 
 struct TSSEntry _interrupt_tss_entry = {
     .ss0 = 0,
@@ -58,6 +65,9 @@ void main_interrupt_handler(
         case (PIC1 + IRQ_KEYBOARD):
             keyboard_isr();
             break;
+        case 0x30:
+            syscall(cpu, info);
+            break;
     }
 }
 
@@ -73,4 +83,33 @@ void set_tss_kernel_current_stack(void) {
     __asm__ volatile ("mov %%ebp, %0": "=r"(stack_ptr) : /* <Empty> */);
     // Add 8 because 4 for ret address and other 4 is for stack_ptr variable
     _interrupt_tss_entry.esp0 = stack_ptr + 8; 
+}
+
+
+void puts(char* str, uint32_t len, uint32_t fg) {
+    for (uint32_t i = 0; i < len; i++) {
+        if (str[i] == '\n') {
+            framebuffer_move_cursor_down();
+            framebuffer_move_cursor_most_left();
+        } else {
+            framebuffer_write_curCursor(str[i], fg, 0);
+            framebuffer_move_cursor_right();
+        }
+    }
+}
+
+void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
+    if (cpu.eax == 0) {
+        struct FAT32DriverRequest* request = (struct FAT32DriverRequest*) cpu.ebx;
+        *((int8_t*) cpu.ecx) = read(*request);
+    } else if (cpu.eax == 4) {
+        keyboard_state_activate();
+        __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
+        while (is_keyboard_blocking());
+        char buf[KEYBOARD_BUFFER_SIZE];
+        get_keyboard_buffer(buf);
+        memcpy((char *) cpu.ebx, buf, cpu.ecx);
+    } else if (cpu.eax == 5) {
+        puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+    }
 }

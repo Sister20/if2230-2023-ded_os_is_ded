@@ -138,5 +138,8 @@ struct TSSEntry {
 // Set kernel stack in TSS
 void set_tss_kernel_current_stack(void);
 
+void puts(char* str, uint32_t len, uint32_t fg);
+
+void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info);
 
 #endif
