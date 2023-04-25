@@ -1,5 +1,4 @@
 #include "lib-header/stdtype.h"
-// #include "lib-header/stdmem.h"
 #include "lib-header/fat32.h"
 
 #define WSL_GREEN   0x3d9b6c
@@ -18,27 +17,12 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
 }
 
 int main(void) {
-    struct ClusterBuffer cl           = {0};
-    struct FAT32DriverRequest request = {
-        .buf                   = &cl,
-        .name                  = "ikanaide",
-        .ext                   = "\0\0\0",
-        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = CLUSTER_SIZE,
-    };
-    int32_t retcode;
-    syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
-    if (retcode == 0)
-        syscall(5, (uint32_t) "owo\n", 4, 0xF);
-
-    char buf[16];
+    char buf[256];
     while (TRUE) {
-        syscall(5, (uint32_t) "ded-os-is-ded", 14, WSL_GREEN);
+        syscall(5, (uint32_t) "ded-os-is-ded", 13, WSL_GREEN);
         syscall(5, (uint32_t) ":", 1, WSL_GREY);
         syscall(5, (uint32_t) "/root", 5, WSL_BLUE);
-        syscall(4, (uint32_t) buf, 16, 0);
-        syscall(5, (uint32_t) buf, 16, 0xF);
+        syscall(4, (uint32_t) buf, 256, 0);
     }
-
     return 0;
 }
