@@ -106,6 +106,5 @@ kernel_execute_user_program:
     push eax ; Code segment selector (GDT_USER_CODE_SELECTOR), user privilege
     mov  eax, ecx
     push eax ; eip register to jump back
-
+    
     iret
-

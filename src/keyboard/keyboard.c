@@ -71,16 +71,16 @@ void keyboard_isr(void) {
             }
             else if (mapped_char == '\b'){
                 if (framebuffer_get_row() > 0 || framebuffer_get_col() > 0){
-                    // keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
-                    // keyboard_state.buffer_index--;
+                    keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
+                    keyboard_state.buffer_index--;
                     framebuffer_write_curCursor('\0', 0xF,0);
                     framebuffer_move_cursor_left();
                     framebuffer_write_curCursor(' ', 0xF, 0);
                 }
             } 
             else if (mapped_char != '\b' && mapped_char != '\n'){
-                // keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
-                // keyboard_state.buffer_index++;
+                keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
+                keyboard_state.buffer_index++;
                 framebuffer_write_curCursor(mapped_char, 0xF, 0);
                 framebuffer_move_cursor_right();
                 framebuffer_write_curCursor(' ', 0xF, 0);

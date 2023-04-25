@@ -10,7 +10,7 @@
 #define GDT_KERNEL_DATA_SEGMENT_SELECTOR 0x10
 
 struct TSSEntry _interrupt_tss_entry = {
-    .ss0 = 0,
+    .ss0 = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
     .unused_register = {0},
 };
 
@@ -55,12 +55,40 @@ void pic_remap(void) {
     out(PIC2_DATA, a2);
 }
 
+void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
+    struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
+    switch (cpu.eax) {
+        case (0) :
+            *((int8_t*) cpu.ecx) = read(request);
+            break;
+        case (1) :
+            *((int8_t*) cpu.ecx) = read_directory(request);
+            break;
+        case (2) :
+            *((int8_t*) cpu.ecx) = write(request);
+            break;
+        case (3) :
+            *((int8_t*) cpu.ecx) = delete(request);
+            break;
+        case (4) : 
+            keyboard_state_activate();
+            __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
+            while (is_keyboard_blocking());
+            char buf[KEYBOARD_BUFFER_SIZE];
+            get_keyboard_buffer(buf);
+            memcpy((char *) cpu.ebx, buf, cpu.ecx);
+            break;
+        case (5) :
+            puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+            break;
+    }
+}
+
 void main_interrupt_handler(
     __attribute__((unused)) struct CPURegister cpu,
     uint32_t int_number,
     __attribute__((unused)) struct InterruptStack info ) 
 {
-
     switch (int_number) {
         case (PIC1 + IRQ_KEYBOARD):
             keyboard_isr();
@@ -87,7 +115,7 @@ void set_tss_kernel_current_stack(void) {
 
 
 void puts(char* str, uint32_t len, uint32_t fg) {
-    for (uint32_t i = 0; i < len; i++) {
+    for (int i = 0; i < (int) len; i++) {
         if (str[i] == '\n') {
             framebuffer_move_cursor_down();
             framebuffer_move_cursor_most_left();
@@ -98,18 +126,4 @@ void puts(char* str, uint32_t len, uint32_t fg) {
     }
 }
 
-void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
-    if (cpu.eax == 0) {
-        struct FAT32DriverRequest* request = (struct FAT32DriverRequest*) cpu.ebx;
-        *((int8_t*) cpu.ecx) = read(*request);
-    } else if (cpu.eax == 4) {
-        keyboard_state_activate();
-        __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
-        while (is_keyboard_blocking());
-        char buf[KEYBOARD_BUFFER_SIZE];
-        get_keyboard_buffer(buf);
-        memcpy((char *) cpu.ebx, buf, cpu.ecx);
-    } else if (cpu.eax == 5) {
-        puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
-    }
-}
+

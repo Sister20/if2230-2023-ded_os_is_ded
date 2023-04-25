@@ -19,10 +19,10 @@ struct FAT32DriverRequest {
 void*  memcpy(void* restrict dest, const void* restrict src, size_t n);
 
 void   initialize_filesystem_fat32(void);
-uint8_t read(struct FAT32DriverRequest request);
-uint8_t read_directory(struct FAT32DriverRequest request);
-uint8_t write(struct FAT32DriverRequest request);
-uint8_t delete(struct FAT32DriverRequest request);
+int8_t read(struct FAT32DriverRequest request);
+int8_t read_directory(struct FAT32DriverRequest request);
+int8_t write(struct FAT32DriverRequest request);
+int8_t delete(struct FAT32DriverRequest request);
 
 
 

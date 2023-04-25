@@ -1,5 +1,11 @@
 #include "lib-header/stdtype.h"
+// #include "lib-header/stdmem.h"
 #include "lib-header/fat32.h"
+
+#define WSL_GREEN   0x3d9b6c
+#define WSL_BLUE    0x3c73da
+#define WSL_GREY    0x8ba1b9
+
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("mov %0, %%ebx" : /* <Empty> */ : "r"(ebx));
@@ -27,15 +33,12 @@ int main(void) {
 
     char buf[16];
     while (TRUE) {
+        syscall(5, (uint32_t) "ded-os-is-ded", 14, WSL_GREEN);
+        syscall(5, (uint32_t) ":", 1, WSL_GREY);
+        syscall(5, (uint32_t) "/root", 5, WSL_BLUE);
         syscall(4, (uint32_t) buf, 16, 0);
         syscall(5, (uint32_t) buf, 16, 0xF);
     }
 
     return 0;
 }
-
-// int main(void) {
-//     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
-//     while (TRUE);
-//     return 0;
-// }
