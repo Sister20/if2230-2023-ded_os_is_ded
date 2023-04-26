@@ -9,6 +9,8 @@
 #define BUFFER_WIDTH 80
 #define BUFFER_HEIGHT 25
 
+#define EOF -1
+
 /**
  * Terminal framebuffer
  * Resolution: 80x25
@@ -73,5 +75,11 @@ void framebuffer_move_cursor_most_right(void);
 
 /* write current cursor */
 void framebuffer_write_curCursor(char c, uint8_t fg, uint8_t bg);
+
+void putchar(char character, uint32_t fg);
+
+void puts(char* str, uint32_t len, uint32_t fg);
+
+void show_file(char* buffer, uint32_t len_bound);
 
 #endif

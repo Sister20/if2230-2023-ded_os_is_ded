@@ -5,6 +5,7 @@
 #define BIOS_LIGHT_GREEN    0b1010
 #define BIOS_GREY           0b0111
 #define BIOS_LIGHT_BLUE     0b1001
+#define BIOS_LIGHT_RED      0b1100
 #define BIOS_WHITE          0b1111
 
 #define KEYBOARD_BUFFER_SIZE    256
@@ -12,7 +13,7 @@
 
 
 uint32_t cwd_cluster_number = ROOT_CLUSTER_NUMBER;
-char request_buf[4*CLUSTER_SIZE];
+char request_buf[BUFFER_SIZE];
 struct FAT32DriverRequest request;
 char keyboard_buf[KEYBOARD_BUFFER_SIZE];
 
@@ -74,8 +75,8 @@ int main(void) {
         syscall(4, (uint32_t) keyboard_buf, 256, 0);
         char *command = get_command();
         char *argument = get_argument();
-        
         int argument_length = length(argument);
+
         if (memcmp(command, "cd", 2) == 0 && argument_length != 0) {
             cwd_cluster_number = *argument - '0';
         } else if (memcmp(command, "ls", 2) == 0 && argument_length == 0) {
@@ -83,7 +84,32 @@ int main(void) {
         } else if (memcmp(command, "mkdir", 5) == 0 && argument_length != 0) {
             print("command mkdir\n", BIOS_WHITE);
         } else if (memcmp(command, "cat", 3) == 0 && argument_length != 0) {
-            print("command cat\n", BIOS_WHITE);
+            int retcode;
+            request.buffer_size = BUFFER_SIZE;
+            request.buf = request_buf;
+            request.parent_cluster_number = cwd_cluster_number;
+            int i;
+            for (i = 0; i < 8; i++) {
+                if (argument[i] == '.') {
+                    break;
+                }
+                request.name[i] = argument[i];
+            }
+            for (int j = 0; j < 3; j++) {
+                request.ext[j] = argument[i + 1 + j];
+            }
+            syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
+            if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
+                print("Request file size is too large..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
+                print("Request is not a file..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
+                print("Request file not found in current directory..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
+                print("Unknown error occurs..\n", BIOS_LIGHT_RED);
+            } else {
+                syscall(7, (uint32_t) request_buf, BUFFER_SIZE, 0);
+            }
         } else if (memcmp(command, "cp", 2) == 0 && argument_length != 0) {
             print("command cp\n", BIOS_WHITE);  
         } else if (memcmp(command, "rm", 2) == 0 && argument_length != 0) {
@@ -93,7 +119,7 @@ int main(void) {
         } else if (memcmp(command, "whereis", 7) == 0) {
             print("command whereis\n", BIOS_WHITE);
         } else {
-            print("command invalid\n", BIOS_WHITE);
+            print("command invalid\n", BIOS_LIGHT_RED);
         }
 
     }

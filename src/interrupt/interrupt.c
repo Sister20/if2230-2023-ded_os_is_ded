@@ -84,6 +84,9 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         case (6) :
             get_dir_path((char *) cpu.ebx, cpu.ecx); 
             break;
+        case (7) : 
+            show_file((char* ) cpu.ebx, cpu.ecx);
+            break;
     }
 }
 

@@ -35,7 +35,26 @@
 #define ATTR_SUBDIRECTORY     0b00010000
 #define UATTR_NOT_EMPTY       0b10101010
 
+#define RD_REQUEST_SUCCESS_RETURN       0
+#define RD_REQUEST_NOT_A_FOLDER_RETURN  1
+#define RD_REQUEST_NOT_FOUND_RETURN     2
+#define RD_REQUEST_UNKNOWN_RETURN      -1
 
+#define R_REQUEST_SUCCESS_RETURN        0
+#define R_REQUEST_NOT_A_FILE_RETURN     1
+#define R_NOT_ENOUGH_BUFFER_RETURN      2
+#define R_REQUEST_NOT_FOUND_RETURN      3
+#define R_REQUEST_UNKNOWN_RETURN       -1
+
+#define W_REQUEST_SUCCESS_RETURN            0
+#define W_REQUEST_FILE_ALREADY_EXIST_RETURN 1
+#define W_REQUEST_INVALID_PARENT_RETURN     2
+#define W_REQUEST_UNKNOWN_RETURN           -1
+
+#define D_REQUEST_SUCCESS_RETURN            0
+#define D_REQUEST_NOT_FOUND_RETURN          1
+#define D_FOLDER_NOT_EMPTY_RETURN           2
+#define D_REQUEST_UNKNOWN_RETURN           -1
 
 // Boot sector signature for this file system "FAT32 - IF2230 edition"
 extern const uint8_t fs_signature[BLOCK_SIZE];

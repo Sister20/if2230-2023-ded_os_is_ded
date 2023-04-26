@@ -100,14 +100,29 @@ void framebuffer_write_curCursor(char c, uint8_t fg, uint8_t bg){
         c, fg, bg);
 }
 
+void putchar(char character, uint32_t fg) {
+    if (character == '\n') {
+        framebuffer_move_cursor_down();
+        framebuffer_move_cursor_most_left();
+    } else {
+        framebuffer_write_curCursor(character, fg, 0);
+        framebuffer_move_cursor_right();
+    }
+}
+
 void puts(char* str, uint32_t len, uint32_t fg) {
     for (int i = 0; i < (int) len; i++) {
-        if (str[i] == '\n') {
-            framebuffer_move_cursor_down();
-            framebuffer_move_cursor_most_left();
-        } else {
-            framebuffer_write_curCursor(str[i], fg, 0);
-            framebuffer_move_cursor_right();
-        }
+        putchar(str[i], fg);
     }
+}
+
+void show_file(char* buffer, uint32_t len_bound) {
+    for (int i = 0; i < (int) len_bound; i++) {
+        if (buffer[i] == EOF) {
+            putchar(EOF, 1);
+            break;
+        }
+        putchar(buffer[i], 0b1111);
+    }
+    putchar('\n', 0b1111);
 }
