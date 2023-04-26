@@ -26,7 +26,8 @@ const char keyboard_scancode_1_to_ascii_map[256] = {
 static struct KeyboardDriverState keyboard_state = {
     .read_extended_mode= FALSE,
     .keyboard_input_on = FALSE,
-    .buffer_index = 0
+    .buffer_index = 0,
+    .keyboard_buffer = {0}
 };
 
 // Activate keyboard ISR / start listen keyboard & save to buffer
@@ -45,6 +46,8 @@ void get_keyboard_buffer(char *buf){
     for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++){
         buf[i] = keyboard_state.keyboard_buffer[i];
     }
+    keyboard_state.buffer_index = 0;
+    memset(keyboard_state.keyboard_buffer, 0, KEYBOARD_BUFFER_SIZE);
 }
 
 // Check whether keyboard ISR is active or not - @return Equal with keyboard_input_on value

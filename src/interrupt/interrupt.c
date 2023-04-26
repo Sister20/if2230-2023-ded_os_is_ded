@@ -114,16 +114,4 @@ void set_tss_kernel_current_stack(void) {
 }
 
 
-void puts(char* str, uint32_t len, uint32_t fg) {
-    for (int i = 0; i < (int) len; i++) {
-        if (str[i] == '\n') {
-            framebuffer_move_cursor_down();
-            framebuffer_move_cursor_most_left();
-        } else {
-            framebuffer_write_curCursor(str[i], fg, 0);
-            framebuffer_move_cursor_right();
-        }
-    }
-}
-
 

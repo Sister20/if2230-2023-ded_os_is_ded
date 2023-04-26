@@ -36,8 +36,15 @@ void kernel_setup(void) {
         .buffer_size           = 0x100000,
     };
     read(request);
-
     
+    struct FAT32DriverRequest request2 = {
+        .buf                   = (uint8_t*) "Lorem ipsum dolor sit amet, consectetur adipiscing elit, \n",
+        .name                  = "lorem",
+        .ext                   = "txt",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 1*CLUSTER_SIZE,
+    };
+    write(request2);
 
     // Set TSS $esp pointer and jump into shell 
     set_tss_kernel_current_stack();

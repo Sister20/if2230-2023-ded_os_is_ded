@@ -137,9 +137,9 @@ int8_t read_directory(struct FAT32DriverRequest request) {
     int dir_length = sizeof(struct FAT32DirectoryTable)/sizeof(struct FAT32DirectoryEntry);
     for (int i = 1; i < dir_length; i++) {
         struct FAT32DirectoryEntry current_entry = driver_state.dir_table_buf.table[i];
-        bool current_entry_name_equal = memcmp(current_entry.name, request.name, 8);
-        bool current_entry_ext_equal = memcmp(current_entry.ext, request.ext, 3);
-        if (current_entry_ext_equal == 0 && current_entry_name_equal == 0) {
+        bool current_entry_name_equal = memcmp(current_entry.name, request.name, 8) == 0;
+        bool current_entry_ext_equal = memcmp(current_entry.ext, request.ext, 3) == 0;
+        if (current_entry_ext_equal && current_entry_name_equal) {
             bool current_entry_is_dir = current_entry.attribute == ATTR_SUBDIRECTORY;
             if (current_entry_is_dir) {
                 uint32_t request_cluster_number = current_entry.cluster_high << 16 

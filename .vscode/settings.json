@@ -36,6 +36,9 @@
   ],
 "C_Cpp_Runner.useAddressSanitizer": false,
 "files.associations": {
-    "stdtype.h": "c"
-}
+  "stdtype.h": "c",
+  "fat32.h": "c",
+  "stdmem.h": "c"
+},
+"C_Cpp.errorSquiggles": "disabled"
 }
