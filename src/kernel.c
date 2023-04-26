@@ -46,6 +46,27 @@ void kernel_setup(void) {
     };
     write(request2);
 
+    struct FAT32DriverRequest request3 = {
+        .buf                   = (uint8_t*) "segs bebas",
+        .name                  = "segs",
+        .ext                   = "dir",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0,
+    };
+    write(request3);
+
+    struct FAT32DriverRequest request4 = {
+        .buf                   = (uint8_t*) "segs",
+        .name                  = "sugar",
+        .ext                   = "dir",
+        .parent_cluster_number = 5,
+        .buffer_size           = 0,
+    };
+    write(request4);
+
+
+
+
     // Set TSS $esp pointer and jump into shell 
     set_tss_kernel_current_stack();
     kernel_execute_user_program((uint8_t*) 0);

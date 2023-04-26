@@ -38,7 +38,8 @@
 "files.associations": {
   "stdtype.h": "c",
   "fat32.h": "c",
-  "stdmem.h": "c"
+  "stdmem.h": "c",
+  "framebuffer.h": "c"
 },
 "C_Cpp.errorSquiggles": "disabled"
 }

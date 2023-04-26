@@ -245,9 +245,10 @@ uint32_t get_empty_cluster();
  */
 int8_t delete(struct FAT32DriverRequest request);
 
-
 void initialize_root(void);
 
 void reset_entry(struct FAT32DirectoryEntry *entry);
+
+void get_dir_path(char* buffer, uint32_t directory_cluster_number);
 
 #endif

@@ -408,3 +408,30 @@ void reset_entry(struct FAT32DirectoryEntry *entry){
     entry->cluster_high = 0;
     entry->cluster_low = 0;
 }
+
+void get_dir_path(char* buffer, uint32_t directory_cluster_number) {
+    char path[256] = {0};
+    int depth = 0;
+    struct FAT32DirectoryTable directory;
+    while (directory_cluster_number != ROOT_CLUSTER_NUMBER) {
+        read_clusters(&directory, directory_cluster_number, 1);
+        memmove(path + 8*depth, directory.table->name, 8);
+        depth++;
+        directory_cluster_number = directory.table->cluster_high << 16 
+            | directory.table->cluster_low;
+    }
+    int k = 5;
+    memcpy(buffer, "root/", 5);
+    for (int i = depth - 1; i >= 0; i--) {
+        for (int j = 0; j <= 8; j++) {
+            if (path[i*8 + j] == '\0') {
+                continue;
+            }
+             buffer[k] = path[i*8 + j];
+             k++;
+        }
+        buffer[k] = '/';
+        k++;
+    }
+    buffer[--k] = '\0';
+}

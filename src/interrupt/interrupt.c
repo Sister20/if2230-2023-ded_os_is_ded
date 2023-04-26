@@ -72,14 +72,17 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             break;
         case (4) : 
             keyboard_state_activate();
-            __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
+            __asm__("sti"); 
             while (is_keyboard_blocking());
             char buf[KEYBOARD_BUFFER_SIZE];
             get_keyboard_buffer(buf);
             memcpy((char *) cpu.ebx, buf, cpu.ecx);
             break;
         case (5) :
-            puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+            puts((char *) cpu.ebx, cpu.ecx, cpu.edx); 
+            break;
+        case (6) :
+            get_dir_path((char *) cpu.ebx, cpu.ecx); 
             break;
     }
 }
@@ -104,13 +107,23 @@ void activate_keyboard_interrupt(void) {
     out(PIC2_DATA, PIC_DISABLE_ALL_MASK);
 }
 
-
 void set_tss_kernel_current_stack(void) {
     uint32_t stack_ptr;
     // Reading base stack frame instead esp
     __asm__ volatile ("mov %%ebp, %0": "=r"(stack_ptr) : /* <Empty> */);
     // Add 8 because 4 for ret address and other 4 is for stack_ptr variable
     _interrupt_tss_entry.esp0 = stack_ptr + 8; 
+}
+
+bool is_alphanumeric(char *character) {
+    return *character != ' '
+        && *character != '\0';
+}
+
+int length(char* text) { 
+    int i = 0;
+    while (is_alphanumeric(text++)) i++;
+    return i;
 }
 
 
