@@ -73,7 +73,9 @@ void keyboard_isr(void) {
                 }
             }
             else if (mapped_char == '\b'){
-                if (framebuffer_get_row() > 0 || framebuffer_get_col() > 0){
+                if (keyboard_state.buffer_index == 0) {
+                    keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
+                } else if (framebuffer_get_row() > 0 || framebuffer_get_col() > 0){
                     keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
                     keyboard_state.buffer_index--;
                     framebuffer_write_curCursor('\0', 0xF,0);
