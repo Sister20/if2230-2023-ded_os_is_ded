@@ -89,6 +89,13 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             break;
         case (8) :
             get_children((char* ) cpu.ebx, cpu.ecx);
+            break;
+        case (9) :
+            *((uint32_t*) cpu.ecx) = move_to_child_directory(request);
+            break;
+        case (10) :
+            *((uint32_t*) cpu.ecx) = move_to_parent_directory(request);
+            break;
     }
 }
 

@@ -271,4 +271,9 @@ void reset_entry(struct FAT32DirectoryEntry *entry);
 void get_dir_path(char* buffer, uint32_t directory_cluster_number);
 
 void get_children(char* buffer, uint32_t directory_cluster_number);
+
+int32_t move_to_child_directory(struct FAT32DriverRequest request);
+
+int32_t move_to_parent_directory(struct FAT32DriverRequest request);
+
 #endif

@@ -141,7 +141,7 @@ int8_t read_directory(struct FAT32DriverRequest request) {
             if (current_entry_is_dir) {
                 uint32_t request_cluster_number = current_entry.cluster_high << 16 
                                                     | current_entry.cluster_low;
-                read_clusters(request.buf , request_cluster_number, 1);
+                read_clusters(request.buf, request_cluster_number, 1);
                 return RD_REQUEST_SUCCESS_RETURN;
             } else {
                 return RD_REQUEST_NOT_A_FOLDER_RETURN;
@@ -462,4 +462,26 @@ void get_children(char* buffer, uint32_t directory_cluster_number) {
         buffer[idx] = '\n';
         idx++;
     }
+}
+
+int32_t move_to_child_directory(struct FAT32DriverRequest request) {
+    struct FAT32DirectoryTable directory;
+    read_clusters(&directory, request.parent_cluster_number, 1);
+    int dir_length = sizeof(struct FAT32DirectoryTable)/sizeof(struct FAT32DirectoryEntry);
+    for (int i = 1; i < dir_length; i++) {
+        struct FAT32DirectoryEntry current_child = directory.table[i];
+        bool current_entry_name_equal = memcmp(current_child.name, request.name, 8) == 0;
+        bool current_entry_ext_equal = memcmp(current_child.ext, "dir", 3) == 0;
+        if (current_entry_ext_equal && current_entry_name_equal) {
+            return current_child.cluster_high << 16 | current_child.cluster_low;
+        }
+    }
+    return 0;
+}
+
+int32_t move_to_parent_directory(struct FAT32DriverRequest request) {
+    struct FAT32DirectoryTable directory;
+    read_clusters(&directory, request.parent_cluster_number, 1);
+    struct FAT32DirectoryEntry self = directory.table[0];
+    return self.cluster_high << 16 | self.cluster_low;
 }

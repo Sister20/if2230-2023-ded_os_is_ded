@@ -44,6 +44,15 @@ int length(char* text) {
     return i;
 }
 
+bool is_single_arg(char* text) { 
+    int i = 0;
+    while (text[i] != '\0') {
+        if (text[i] == ' ') return 0;
+        i++;
+    }
+    return 1;
+}
+
 void print(char* text , int color) {
     int length = 0;
     while (*text++) length++;
@@ -71,20 +80,43 @@ int main(void) {
         syscall(5, (uint32_t) ":", 1, BIOS_WHITE);
         syscall(6, (uint32_t) request_buf, cwd_cluster_number, 0);
         print(request_buf, BIOS_LIGHT_BLUE);
+        memset(request_buf, 0, BUFFER_SIZE);
         syscall(5, (uint32_t) "$ ", 2, BIOS_WHITE);
         syscall(4, (uint32_t) keyboard_buf, 256, 0);
         char *command = get_command();
         char *argument = get_argument();
         int argument_length = length(argument);
+        bool single_arg = is_single_arg(argument);
 
-        if (memcmp(command, "cd", 2) == 0 && argument_length != 0) {
-            cwd_cluster_number = *argument - '0';
+        if (memcmp(command, "cd", 2) == 0 && single_arg) {
+            uint32_t retcode;
+            if (memcpy("..", argument, 2) && argument_length == 2) {
+                if (cwd_cluster_number != ROOT_CLUSTER_NUMBER) {
+                    syscall(10, (uint32_t) &request, (uint32_t) &retcode, 0);
+                    cwd_cluster_number = retcode;
+                }
+            } else {
+                request.buffer_size = BUFFER_SIZE;
+                request.buf = request_buf;
+                memcpy(request.name, argument, 5);
+                memcpy(request.ext, "dir", 3);
+                request.parent_cluster_number = cwd_cluster_number;
+                syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+                if (retcode == RD_REQUEST_SUCCESS_RETURN) {
+                    syscall(9, (uint32_t) &request, (uint32_t) &retcode, 0);
+                    cwd_cluster_number = retcode;
+                } else if (retcode == RD_REQUEST_NOT_FOUND_RETURN) {
+                    print("DIRECTORY NOT FOUND\n", BIOS_LIGHT_RED);
+                }
+            }
         } else if (memcmp(command, "ls", 2) == 0 && argument_length == 0) {
-            request.buffer_size = BUFFER_SIZE;
-            request.buf = request_buf;
-            request.parent_cluster_number = cwd_cluster_number;
             syscall(8, (uint32_t) request_buf, cwd_cluster_number, 0);
-            print(request_buf, BIOS_WHITE);
+            if (request_buf[0] == 0) {
+                print("DIRECTORY EMPTY\n", BIOS_LIGHT_BLUE);
+            } else {
+                print(request_buf, BIOS_WHITE);
+                memset(request_buf, 0, BUFFER_SIZE);
+            }
         } else if (memcmp(command, "mkdir", 5) == 0 && argument_length != 0) {
             print("command mkdir\n", BIOS_WHITE);
         } else if (memcmp(command, "cat", 3) == 0 && argument_length != 0) {
@@ -125,7 +157,7 @@ int main(void) {
         } else {
             print("command invalid\n", BIOS_LIGHT_RED);
         }
-
+        memset(keyboard_buf, 0, BUFFER_SIZE);
     }
     return 0;
 }
