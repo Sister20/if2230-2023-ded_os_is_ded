@@ -157,7 +157,7 @@ int main(void) {
         } else {
             print("command invalid\n", BIOS_LIGHT_RED);
         }
-        memset(keyboard_buf, 0, BUFFER_SIZE);
+        memset(keyboard_buf, 0, KEYBOARD_BUFFER_SIZE);
     }
     return 0;
 }
