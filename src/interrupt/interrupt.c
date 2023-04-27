@@ -87,6 +87,8 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         case (7) : 
             show_file((char* ) cpu.ebx, cpu.ecx);
             break;
+        case (8) :
+            get_children((char* ) cpu.ebx, cpu.ecx);
     }
 }
 
@@ -128,6 +130,7 @@ int length(char* text) {
     while (is_alphanumeric(text++)) i++;
     return i;
 }
+
 
 
 

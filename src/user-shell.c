@@ -80,23 +80,11 @@ int main(void) {
         if (memcmp(command, "cd", 2) == 0 && argument_length != 0) {
             cwd_cluster_number = *argument - '0';
         } else if (memcmp(command, "ls", 2) == 0 && argument_length == 0) {
-            print("command ls\n", BIOS_WHITE);
-            int retcode;
-            request.buffer_size = sizeof(struct FAT32DirectoryTable);
+            request.buffer_size = BUFFER_SIZE;
             request.buf = request_buf;
             request.parent_cluster_number = cwd_cluster_number;
-            syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
-            if (retcode == RD_REQUEST_SUCCESS_RETURN) {
-                print("sucess\n", BIOS_LIGHT_RED);
-                syscall(6, (uint32_t) request_buf, cwd_cluster_number, 0);
-                print(request_buf, BIOS_LIGHT_BLUE);
-            } else if (retcode == RD_REQUEST_UNKNOWN_RETURN) {
-                print("unknown\n", BIOS_LIGHT_RED);
-            } else if (retcode == RD_REQUEST_NOT_A_FOLDER_RETURN) {
-                print("not a folder\n", BIOS_LIGHT_RED);
-            } else if (retcode == RD_REQUEST_NOT_FOUND_RETURN) {
-                print("not found\n", BIOS_LIGHT_GREEN);
-            }
+            syscall(8, (uint32_t) request_buf, cwd_cluster_number, 0);
+            print(request_buf, BIOS_WHITE);
         } else if (memcmp(command, "mkdir", 5) == 0 && argument_length != 0) {
             print("command mkdir\n", BIOS_WHITE);
         } else if (memcmp(command, "cat", 3) == 0 && argument_length != 0) {

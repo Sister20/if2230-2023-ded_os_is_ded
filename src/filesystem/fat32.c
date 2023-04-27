@@ -151,7 +151,6 @@ int8_t read_directory(struct FAT32DriverRequest request) {
     return RD_REQUEST_NOT_FOUND_RETURN;
 }
 
-
 /**
  * FAT32 read, read a file from file system.
  *
@@ -374,7 +373,7 @@ int8_t delete(struct FAT32DriverRequest request) {
 void initialize_root(void){
     struct FAT32DirectoryTable root = {0};
     init_directory_table(&root, "root\0\0\0\0", ROOT_CLUSTER_NUMBER);
-    root.table[0].attribute = ATTR_SUBDIRECTORY;
+    // root.table[0].attribute = ATTR_SUBDIRECTORY;
     memcpy(root.table[0].ext, "dir", 3);
 
     // save to memory?
@@ -416,4 +415,51 @@ void get_dir_path(char* buffer, uint32_t directory_cluster_number) {
         k++;
     }
     buffer[--k] = '\0';
+}
+
+void get_children(char* buffer, uint32_t directory_cluster_number) {
+    struct FAT32DirectoryTable directory;
+    read_clusters(&directory, directory_cluster_number, 1);
+    int dir_length = sizeof(struct FAT32DirectoryTable)/sizeof(struct FAT32DirectoryEntry);
+    int idx = 0;
+    for (int i = 1; i < dir_length; i++) {
+        struct FAT32DirectoryEntry current_child = directory.table[i];
+        bool current_child_name_na = memcmp(current_child.name, "\0\0\0\0\0\0\0\0", 8) == 0;
+        bool current_child_ext_na = memcmp(current_child.ext, "\0\0\0", 3) == 0;
+        if (current_child_name_na && current_child_ext_na) {
+            continue;
+        } else {
+            for (int j = 0; j <= 8; j++) {
+                if (current_child.name[j] == '\0') {
+                    break;
+                }
+                buffer[idx] = current_child.name[j];
+                idx++;
+            }
+            if (current_child_ext_na) {
+                buffer[idx] = '.';
+                idx++;
+                buffer[idx] = 'f';
+                idx++;
+                buffer[idx] = 'i';
+                idx++;
+                buffer[idx] = 'l';
+                idx++;
+                buffer[idx] = 'e';
+                idx++;
+            } else if (memcmp(current_child.ext, "dir", 3) == 1) {
+                buffer[idx] = '.';
+                idx++;
+                for (int j = 0; j <= 3; j++) {
+                    if (current_child.ext[j] == '\0') {
+                        break;
+                    }
+                    buffer[idx] = current_child.ext[j];
+                    idx++;
+                }
+            }
+        }
+        buffer[idx] = '\n';
+        idx++;
+    }
 }

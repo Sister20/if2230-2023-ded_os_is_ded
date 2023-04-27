@@ -270,4 +270,5 @@ void reset_entry(struct FAT32DirectoryEntry *entry);
 
 void get_dir_path(char* buffer, uint32_t directory_cluster_number);
 
+void get_children(char* buffer, uint32_t directory_cluster_number);
 #endif
