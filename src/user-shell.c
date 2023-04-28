@@ -145,13 +145,14 @@ int main(void) {
                 }
             }
         } else if (memcmp(command, "cat", 3) == 0 && argument_length != 0) {
-            int retcode;
+            int retcode, temp;
             request.buffer_size = BUFFER_SIZE;
             request.buf = request_buf;
             request.parent_cluster_number = cwd_cluster_number;
             int i;
             for (i = 0; i < 8; i++) {
                 if (argument[i] == '.') {
+                    temp = i;
                     break;
                 }
                 request.name[i] = argument[i];
@@ -180,66 +181,67 @@ int main(void) {
             // request.parent_cluster_number = cwd_cluster_number;
             // request.buffer_size = BUFFER_SIZE;
 
-            // //PARSING NAME AND EXTENSION
-            // // File 1 (src)
-            // for (int i = 0; i < 8; i++) {
-            //     if (argument[i] == '.') {
-            //         break;
-            //     } else {
-            //         request.name[i] = argument[i];
-            //     }
-            // }
-            // for (int j = 0; j < 3; j++) {
-            //     request.ext[j] = argument[i + 1 + j];
-            // }
+            //PARSING NAME AND EXTENSION
+            // File 1 (src)
+            for (int i = 0; i < 8; i++) {
+                if (argument[i] == '.') {
+                    temp_i = i;
+                    break;
+                } else {
+                    request.name[i] = argument[i];
+                }
+            }
+            for (int j = 0; j < 3; j++) {
+                request.ext[j] = argument[temp_i + 1 + j];
+            }
 
-            // // READ REQUEST
-            // int retcode;
-            // syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
+            // READ REQUEST
+            syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
 
 
             // // WRITE REQUEST
 
-            // //PARSING NAME AND EXTENSION
-            // for (int x = 0; request.name[x] != NULL; x++) {
-            //     name[x] = "";
-            // }
-            // // File 2 (dest)
-            // for (int k = i+3+j; k < i+3+j+8; k++) {
-            //     int a = 0;
-            //     if (argument[k] == '.') {
-            //         break;
-            //     } else {
-            //         request.name[a] = argument[k];
-            //         a = a + 1;
-            //     }
-            // }
-            // for (int l = 0; l < 3; l++) {
-            //     request.ext[l] = argument[k + 1 + l];
-            // }
+            //PARSING NAME AND EXTENSION
+            for (int x = 0; request.name[x] != '\0'; x++) {
+                request.name[x] = '\0';
+            }
+            // File 2 (dest)
+            for (int k = temp_i+3+2; k < temp_i+3+2+8; k++) {
+                int a = 0;
+                if (argument[k] == '.') {
+                    temp_k = k;
+                    break;
+                } else {
+                    request.name[a] = argument[k];
+                    a = a + 1;
+                }
+            }
+            for (int l = 0; l < 3; l++) {
+                request.ext[l] = argument[temp_k + 1 + l];
+            }
             
-            // if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
-            //     print("Request file size is too large..\n", BIOS_LIGHT_RED);
-            // } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
-            //     print("Request is not a file..\n", BIOS_LIGHT_RED);
-            // } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
-            //     print("Request file not found in current directory..\n", BIOS_LIGHT_RED);
-            // } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
-            //     print("Unknown error occurs..\n", BIOS_LIGHT_RED);
-            // } else {
-            //     syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
-            //     if (retcode == W_REQUEST_INVALID_PARENT_RETURN) {
-            //         print("FAILED..\n", BIOS_LIGHT_RED);
-            //     } else if (retcode == W_REQUEST_FILE_ALREADY_EXIST_RETURN) {
-            //         print("FAILED..\n", BIOS_LIGHT_RED);
-            //     } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
-            //         print("FAILED..\n", BIOS_LIGHT_RED);
-            //     } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
-            //         print("FAILED..\n", BIOS_LIGHT_RED);
-            //     } else {
-            //         print("Success!!\n", BIOS_LIGHT_GREEN)
-            //     }
-            // }
+            if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
+                print("Request file size is too large..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
+                print("Request is not a file..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
+                print("Request file not found in current directory..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
+                print("Unknown error occurs..\n", BIOS_LIGHT_RED);
+            } else {
+                syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
+                if (retcode == W_REQUEST_INVALID_PARENT_RETURN) {
+                    print("FAILED..\n", BIOS_LIGHT_RED);
+                } else if (retcode == W_REQUEST_FILE_ALREADY_EXIST_RETURN) {
+                    print("FAILED..\n", BIOS_LIGHT_RED);
+                } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
+                    print("FAILED..\n", BIOS_LIGHT_RED);
+                } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
+                    print("FAILED..\n", BIOS_LIGHT_RED);
+                } else {
+                    print("Success!!\n", BIOS_LIGHT_GREEN);
+                }
+            }
 
         } else if (memcmp(command, "rm", 2) == 0 && argument_length != 0) {
             print("command rm\n", BIOS_WHITE);
