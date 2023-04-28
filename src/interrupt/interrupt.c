@@ -77,6 +77,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             char buf[KEYBOARD_BUFFER_SIZE];
             get_keyboard_buffer(buf);
             memcpy((char *) cpu.ebx, buf, cpu.ecx);
+            keyboard_state_deactivate();
             break;
         case (5) :
             puts((char *) cpu.ebx, cpu.ecx, cpu.edx); 

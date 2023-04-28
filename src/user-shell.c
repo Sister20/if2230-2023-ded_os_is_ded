@@ -35,7 +35,7 @@ uint32_t hash(char* name) {
 
 bool is_alphanumeric(char *character) {
     return *character != ' '
-        && *character != '\0';
+         && *character != '\0';
 }
 
 int length(char* text) { 
@@ -91,6 +91,7 @@ int main(void) {
         if (memcmp(command, "cd", 2) == 0 && single_arg) {
             uint32_t retcode;
             if (memcpy("..", argument, 2) && argument_length == 2) {
+                request.parent_cluster_number = cwd_cluster_number;
                 if (cwd_cluster_number != ROOT_CLUSTER_NUMBER) {
                     syscall(10, (uint32_t) &request, (uint32_t) &retcode, 0);
                     cwd_cluster_number = retcode;
@@ -98,7 +99,12 @@ int main(void) {
             } else {
                 request.buffer_size = BUFFER_SIZE;
                 request.buf = request_buf;
-                memcpy(request.name, argument, 5);
+                memcpy(request.name, argument, argument_length);
+                int idx = argument_length;
+                while (idx <= 7) {
+                    request.name[idx] = '\0';
+                    idx++;
+                }
                 memcpy(request.ext, "dir", 3);
                 request.parent_cluster_number = cwd_cluster_number;
                 syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
@@ -115,23 +121,43 @@ int main(void) {
                 print("DIRECTORY EMPTY\n", BIOS_LIGHT_BLUE);
             } else {
                 print(request_buf, BIOS_WHITE);
-                memset(request_buf, 0, BUFFER_SIZE);
             }
         } else if (memcmp(command, "mkdir", 5) == 0 && argument_length != 0) {
-            print("command mkdir\n", BIOS_WHITE);
+            uint32_t retcode;
+            request.buffer_size = 0;
+            request.buf = request_buf;
+            memcpy(request.name, argument, argument_length);
+            int idx = argument_length;
+            while (idx <= 7) {
+                request.name[idx] = '\0';
+                idx++;
+            }
+            memcpy(request.ext, "dir", 3);
+            request.parent_cluster_number = cwd_cluster_number;
+            syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+            if (retcode == RD_REQUEST_SUCCESS_RETURN) {
+                print("FOLDER ALREADY EXISTS\n", BIOS_LIGHT_RED);
+            } else if (retcode == RD_REQUEST_NOT_FOUND_RETURN) {
+                memset(request_buf, 0, BUFFER_SIZE);
+                syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
+                if (retcode != W_REQUEST_SUCCESS_RETURN) {
+                    print("Unknown fault. try again.\n", BIOS_LIGHT_RED);
+                }
+            }
         } else if (memcmp(command, "cat", 3) == 0 && argument_length != 0) {
             int retcode;
             request.buffer_size = BUFFER_SIZE;
             request.buf = request_buf;
             request.parent_cluster_number = cwd_cluster_number;
-            
-            for (int i = 0; i < 8; i++) {
+            int i;
+            for (i = 0; i < 8; i++) {
                 if (argument[i] == '.') {
                     break;
                 }
                 request.name[i] = argument[i];
             }
-            for (int j = 0; j < 3; j++) {
+            int j;
+            for (j = 0; j < 3; j++) {
                 request.ext[j] = argument[i + 1 + j];
             }
             syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
@@ -147,73 +173,73 @@ int main(void) {
                 syscall(7, (uint32_t) request_buf, BUFFER_SIZE, 0);
             }
         } else if (memcmp(command, "cp", 2) == 0 && argument_length != 0) {
-            print("command cp\n", BIOS_WHITE);  
+            // print("command cp\n", BIOS_WHITE);  
 
-            //PREPARING REQUEST
-            request.buf = request_buf;
-            request.parent_cluster_number = cwd_cluster_number;
-            request.buffer_size = BUFFER_SIZE;
+            // //PREPARING REQUEST
+            // request.buf = request_buf;
+            // request.parent_cluster_number = cwd_cluster_number;
+            // request.buffer_size = BUFFER_SIZE;
 
-            //PARSING NAME AND EXTENSION
-            // File 1 (src)
-            for (int i = 0; i < 8; i++) {
-                if (argument[i] == '.') {
-                    break;
-                } else {
-                    request.name[i] = argument[i];
-                }
-            }
-            for (int j = 0; j < 3; j++) {
-                request.ext[j] = argument[i + 1 + j];
-            }
+            // //PARSING NAME AND EXTENSION
+            // // File 1 (src)
+            // for (int i = 0; i < 8; i++) {
+            //     if (argument[i] == '.') {
+            //         break;
+            //     } else {
+            //         request.name[i] = argument[i];
+            //     }
+            // }
+            // for (int j = 0; j < 3; j++) {
+            //     request.ext[j] = argument[i + 1 + j];
+            // }
 
-            // READ REQUEST
-            int retcode;
-            syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
+            // // READ REQUEST
+            // int retcode;
+            // syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
 
 
-            // WRITE REQUEST
+            // // WRITE REQUEST
 
-            //PARSING NAME AND EXTENSION
-            for (int x = 0; request.name[x] != NULL; x++) {
-                name[x] = "";
-            }
-            // File 2 (dest)
-            for (int k = i+3+j; k < i+3+j+8; k++) {
-                int a = 0;
-                if (argument[k] == '.') {
-                    break;
-                } else {
-                    request.name[a] = argument[k];
-                    a = a + 1;
-                }
-            }
-            for (int l = 0; l < 3; l++) {
-                request.ext[l] = argument[k + 1 + l];
-            }
+            // //PARSING NAME AND EXTENSION
+            // for (int x = 0; request.name[x] != NULL; x++) {
+            //     name[x] = "";
+            // }
+            // // File 2 (dest)
+            // for (int k = i+3+j; k < i+3+j+8; k++) {
+            //     int a = 0;
+            //     if (argument[k] == '.') {
+            //         break;
+            //     } else {
+            //         request.name[a] = argument[k];
+            //         a = a + 1;
+            //     }
+            // }
+            // for (int l = 0; l < 3; l++) {
+            //     request.ext[l] = argument[k + 1 + l];
+            // }
             
-            if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
-                print("Request file size is too large..\n", BIOS_LIGHT_RED);
-            } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
-                print("Request is not a file..\n", BIOS_LIGHT_RED);
-            } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
-                print("Request file not found in current directory..\n", BIOS_LIGHT_RED);
-            } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
-                print("Unknown error occurs..\n", BIOS_LIGHT_RED);
-            } else {
-                syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
-                if (retcode == W_REQUEST_INVALID_PARENT_RETURN) {
-                    print("FAILED..\n", BIOS_LIGHT_RED);
-                } else if (retcode == W_REQUEST_FILE_ALREADY_EXIST_RETURN) {
-                    print("FAILED..\n", BIOS_LIGHT_RED);
-                } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
-                    print("FAILED..\n", BIOS_LIGHT_RED);
-                } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
-                    print("FAILED..\n", BIOS_LIGHT_RED);
-                } else {
-                    print("Success!!\n", BIOS_LIGHT_GREEN)
-                }
-            }
+            // if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
+            //     print("Request file size is too large..\n", BIOS_LIGHT_RED);
+            // } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
+            //     print("Request is not a file..\n", BIOS_LIGHT_RED);
+            // } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
+            //     print("Request file not found in current directory..\n", BIOS_LIGHT_RED);
+            // } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
+            //     print("Unknown error occurs..\n", BIOS_LIGHT_RED);
+            // } else {
+            //     syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
+            //     if (retcode == W_REQUEST_INVALID_PARENT_RETURN) {
+            //         print("FAILED..\n", BIOS_LIGHT_RED);
+            //     } else if (retcode == W_REQUEST_FILE_ALREADY_EXIST_RETURN) {
+            //         print("FAILED..\n", BIOS_LIGHT_RED);
+            //     } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
+            //         print("FAILED..\n", BIOS_LIGHT_RED);
+            //     } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
+            //         print("FAILED..\n", BIOS_LIGHT_RED);
+            //     } else {
+            //         print("Success!!\n", BIOS_LIGHT_GREEN)
+            //     }
+            // }
 
         } else if (memcmp(command, "rm", 2) == 0 && argument_length != 0) {
             print("command rm\n", BIOS_WHITE);
@@ -224,7 +250,7 @@ int main(void) {
         } else {
             print("command invalid\n", BIOS_LIGHT_RED);
         }
-        memset(keyboard_buf, 0, KEYBOARD_BUFFER_SIZE);
+        memset(request_buf, 0, BUFFER_SIZE);
     }
     return 0;
 }

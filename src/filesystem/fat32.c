@@ -393,6 +393,8 @@ void reset_entry(struct FAT32DirectoryEntry *entry){
 void get_dir_path(char* buffer, uint32_t directory_cluster_number) {
     char path[256] = {0};
     int depth = 0;
+    int k = 5;
+    memcpy(buffer, "root/", 5);
     struct FAT32DirectoryTable directory;
     while (directory_cluster_number != ROOT_CLUSTER_NUMBER) {
         read_clusters(&directory, directory_cluster_number, 1);
@@ -401,15 +403,17 @@ void get_dir_path(char* buffer, uint32_t directory_cluster_number) {
         directory_cluster_number = directory.table->cluster_high << 16 
             | directory.table->cluster_low;
     }
-    int k = 5;
-    memcpy(buffer, "root/", 5);
+    
     for (int i = depth - 1; i >= 0; i--) {
         for (int j = 0; j <= 8; j++) {
             if (path[i*8 + j] == '\0') {
                 continue;
             }
-             buffer[k] = path[i*8 + j];
-             k++;
+            buffer[k] = path[i*8 + j];
+            k++;
+        }
+        if (i != depth - 1) {
+            k--;
         }
         buffer[k] = '/';
         k++;
@@ -464,7 +468,7 @@ void get_children(char* buffer, uint32_t directory_cluster_number) {
     }
 }
 
-int32_t move_to_child_directory(struct FAT32DriverRequest request) {
+uint32_t move_to_child_directory(struct FAT32DriverRequest request) {
     struct FAT32DirectoryTable directory;
     read_clusters(&directory, request.parent_cluster_number, 1);
     int dir_length = sizeof(struct FAT32DirectoryTable)/sizeof(struct FAT32DirectoryEntry);
@@ -479,9 +483,8 @@ int32_t move_to_child_directory(struct FAT32DriverRequest request) {
     return 0;
 }
 
-int32_t move_to_parent_directory(struct FAT32DriverRequest request) {
+uint32_t move_to_parent_directory(struct FAT32DriverRequest request) {
     struct FAT32DirectoryTable directory;
     read_clusters(&directory, request.parent_cluster_number, 1);
-    struct FAT32DirectoryEntry self = directory.table[0];
-    return self.cluster_high << 16 | self.cluster_low;
+    return directory.table->cluster_high << 16 | directory.table->cluster_low;;
 }
