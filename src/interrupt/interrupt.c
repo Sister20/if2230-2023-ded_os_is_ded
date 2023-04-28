@@ -97,6 +97,9 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         case (10) :
             *((uint32_t*) cpu.ecx) = move_to_parent_directory(request);
             break;
+        case (11) :
+            framebuffer_clear();
+            break;
     }
 }
 

@@ -15,7 +15,7 @@
 uint32_t cwd_cluster_number = ROOT_CLUSTER_NUMBER;
 char request_buf[BUFFER_SIZE];
 struct FAT32DriverRequest request;
-char keyboard_buf[KEYBOARD_BUFFER_SIZE];
+char keyboard_buf[KEYBOARD_BUFFER_SIZE] = {0};
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("mov %0, %%ebx" : /* <Empty> */ : "r"(ebx));
@@ -25,53 +25,36 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("int $0x30");
 }
 
-uint32_t hash(char* name) {
-    uint32_t result = 0;
-    for (int i = 0; i < 8; i++) {
-        result = (result*31 + name[i]) % CLUSTER_MAP_SIZE;
-    }
-    return result;
-}
-
-bool is_alphanumeric(char *character) {
-    return *character != ' '
-         && *character != '\0';
+bool is_blank(char character) {
+    return character == ' '
+         || character == '\0';
 }
 
 int length(char* text) { 
     int i = 0;
-    while (is_alphanumeric(text++)) i++;
+    while (*text != '\n' && !is_blank(*text++)) i++;
     return i;
-}
-
-bool is_single_arg(char* text) { 
-    int i = 0;
-    while (text[i] != '\0') {
-        if (text[i] == ' ') return 0;
-        i++;
-    }
-    return 1;
 }
 
 void print(char* text , int color) {
     int length = 0;
     while (*text++) length++;
-    syscall(5, (uint32_t) text - length -1, length, color);
+    syscall(5, (uint32_t) text - length - 1, length, color);
 }
 
-char* get_command() {
+char* get_word(int num) {
     char* temp = keyboard_buf;
-    int i = 0;
-    while (!is_alphanumeric(temp++) && i++ < KEYBOARD_BUFFER_SIZE);
-    return temp - 1;
-}
-
-char* get_argument() {
-    char* temp = get_command();
-    int i = length(temp);
-    temp += i;
-    while (!is_alphanumeric(temp++) && i++ < KEYBOARD_BUFFER_SIZE);
-    return temp - 1;
+    int word_count = 0;
+    while (1) {
+        while (is_blank(*temp)) temp++;
+        if (word_count == num) {
+            return temp;
+        } else {
+            while (*temp != '\n' && !is_blank(*temp)) temp++;
+            word_count++;
+        }
+    }
+    return temp;
 }
 
 int main(void) {
@@ -83,14 +66,20 @@ int main(void) {
         memset(request_buf, 0, BUFFER_SIZE);
         syscall(5, (uint32_t) "$ ", 2, BIOS_WHITE);
         syscall(4, (uint32_t) keyboard_buf, 256, 0);
-        char *command = get_command();
-        char *argument = get_argument();
-        int argument_length = length(argument);
-        bool single_arg = is_single_arg(argument);
+        char *command = get_word(0);
+        char *argument1 = get_word(1);
+        int argument1_length = length(argument1);
+        char *argument2 = get_word(2);
+        int argument2_length = length(argument2);
 
-        if (memcmp(command, "cd", 2) == 0 && single_arg) {
+        if (*get_word(3) != '\n') {
+            syscall(5, (uint32_t) "Command invalid!\n", 17, BIOS_LIGHT_RED);
+            continue;
+        }
+
+        if (memcmp(command, "cd", 2) == 0 && !argument2_length) {
             uint32_t retcode;
-            if (memcpy("..", argument, 2) && argument_length == 2) {
+            if (memcmp("..", argument1, 2) == 0 && argument1_length == 2) {
                 request.parent_cluster_number = cwd_cluster_number;
                 if (cwd_cluster_number != ROOT_CLUSTER_NUMBER) {
                     syscall(10, (uint32_t) &request, (uint32_t) &retcode, 0);
@@ -99,8 +88,8 @@ int main(void) {
             } else {
                 request.buffer_size = BUFFER_SIZE;
                 request.buf = request_buf;
-                memcpy(request.name, argument, argument_length);
-                int idx = argument_length;
+                memcpy(request.name, argument1, argument1_length);
+                int idx = argument1_length;
                 while (idx <= 7) {
                     request.name[idx] = '\0';
                     idx++;
@@ -115,19 +104,19 @@ int main(void) {
                     print("DIRECTORY NOT FOUND\n", BIOS_LIGHT_RED);
                 }
             }
-        } else if (memcmp(command, "ls", 2) == 0 && argument_length == 0) {
+        } else if (memcmp(command, "ls", 2) == 0 && !argument1_length) {
             syscall(8, (uint32_t) request_buf, cwd_cluster_number, 0);
             if (request_buf[0] == 0) {
                 print("DIRECTORY EMPTY\n", BIOS_LIGHT_BLUE);
             } else {
                 print(request_buf, BIOS_WHITE);
             }
-        } else if (memcmp(command, "mkdir", 5) == 0 && argument_length != 0) {
+        } else if (memcmp(command, "mkdir", 5) == 0 && argument1_length != 0) {
             uint32_t retcode;
             request.buffer_size = 0;
             request.buf = request_buf;
-            memcpy(request.name, argument, argument_length);
-            int idx = argument_length;
+            memcpy(request.name, argument1, argument1_length);
+            int idx = argument1_length;
             while (idx <= 7) {
                 request.name[idx] = '\0';
                 idx++;
@@ -144,22 +133,23 @@ int main(void) {
                     print("Unknown fault. try again.\n", BIOS_LIGHT_RED);
                 }
             }
-        } else if (memcmp(command, "cat", 3) == 0 && argument_length != 0) {
-            int retcode;
+        } else if (memcmp(command, "cat", 3) == 0 && argument1_length) {
+            char* arg = argument1;
             request.buffer_size = BUFFER_SIZE;
             request.buf = request_buf;
             request.parent_cluster_number = cwd_cluster_number;
             int i;
-            for (i = 0; i < 8; i++) {
-                if (argument[i] == '.') {
-                    break;
-                }
-                request.name[i] = argument[i];
+            for (i = 0; i < 8 && *arg != '.' && *arg != '\n'; i++) {
+                request.name[i] = *arg++;
             }
-            int j;
-            for (j = 0; j < 3; j++) {
-                request.ext[j] = argument[i + 1 + j];
+            memset(request.name + i, 0, 8 - i);
+            // bool ext_sensitive = *arg++ == '.';
+            arg++;
+            for (i = 0; i < 3 && *arg != ' ' && *arg != '\n'; i++) {
+                request.ext[i] = *arg++;  
             }
+            memset(request.name + i, 0, 3 - i);
+            int retcode;
             syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
             if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
                 print("Request file size is too large..\n", BIOS_LIGHT_RED);
@@ -172,7 +162,7 @@ int main(void) {
             } else {
                 syscall(7, (uint32_t) request_buf, BUFFER_SIZE, 0);
             }
-        } else if (memcmp(command, "cp", 2) == 0 && argument_length != 0) {
+        } else if (memcmp(command, "cp", 2) == 0 && argument1_length != 0) {
             //DECLARE
             int retcode;
             int temp_i, temp_k;
@@ -187,15 +177,15 @@ int main(void) {
             //PARSING NAME AND EXTENSION
             // File 1 (src)
             for (int i = 0; i < 8; i++) {
-                if (argument[i] == '.') {
+                if (argument1[i] == '.') {
                     temp_i = i;
                     break;
                 } else {
-                    request.name[i] = argument[i];
+                    request.name[i] = argument1[i];
                 }
             }
             for (int j = 0; j < 3; j++) {
-                request.ext[j] = argument[temp_i + 1 + j];
+                request.ext[j] = argument1[temp_i + 1 + j];
             }
 
             syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
@@ -216,16 +206,16 @@ int main(void) {
                 }
                 // File 2 (dest)
                 for (int k = temp_i+3+2; k < temp_i+3+2+8; k++) {
-                    if (argument[k] == '.') {
+                    if (argument1[k] == '.') {
                         temp_k = k;
                         break;
                     } else {
-                        request.name[a] = argument[k];
+                        request.name[a] = argument1[k];
                         a = a + 1;
                     }
                 }
                 for (int l = 0; l < 3; l++) {
-                    request.ext[l] = argument[temp_k + 1 + l];
+                    request.ext[l] = argument1[temp_k + 1 + l];
                 }
 
                 syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
@@ -240,7 +230,7 @@ int main(void) {
                 }
             }
 
-        } else if (memcmp(command, "rm", 2) == 0 && argument_length != 0) {
+        } else if (memcmp(command, "rm", 2) == 0 && *argument1) {
             //DECLARE
             int retcode;
             int temp_i;
@@ -251,15 +241,15 @@ int main(void) {
             // --- DELETE REQUEST ---
             //PARSING NAME AND EXTENSION
             for (int i = 0; i < 8; i++) {
-                if (argument[i] == '.') {
+                if (argument1[i] == '.') {
                     temp_i = i;
                     break;
                 } else {
-                    request.name[i] = argument[i];
+                    request.name[i] = argument1[i];
                 }
             }
             for (int j = 0; j < 3; j++) {
-                request.ext[j] = argument[temp_i + 1 + j];
+                request.ext[j] = argument1[temp_i + 1 + j];
             }
 
             syscall(3, (uint32_t) &request, (uint32_t) &retcode, 0);
@@ -271,14 +261,15 @@ int main(void) {
                 print("File has been removed successfully!\n", BIOS_LIGHT_GREEN);
             }
             
-        } else if (memcmp(command, "mv", 2) == 0 && argument_length != 0) {
+        } else if (memcmp(command, "mv", 2) == 0 && *argument1) {
             print("command mv\n", BIOS_WHITE);
         } else if (memcmp(command, "whereis", 7) == 0) {
             print("command whereis\n", BIOS_WHITE);
+        } else if (memcmp(command, "clear", 5) == 0) {
+            syscall(11, 0, 0, 0);
         } else {
             print("command invalid\n", BIOS_LIGHT_RED);
         }
-        memset(request_buf, 0, BUFFER_SIZE);
     }
     return 0;
 }

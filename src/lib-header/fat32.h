@@ -30,6 +30,7 @@
 
 #define FAT_CLUSTER_NUMBER    1
 #define ROOT_CLUSTER_NUMBER   2
+#define INDEX_CLUSTER_NUMBER  3
 
 /* -- FAT32 DirectoryEntry constants -- */
 #define ATTR_SUBDIRECTORY     0b00010000
@@ -64,8 +65,14 @@ struct ClusterBuffer {
     uint8_t buf[CLUSTER_SIZE];
 } __attribute__((packed));
 
+struct IndexEntry {
+    uint64_t name;
+    uint32_t parent_cluster_number;
+} __attribute__((packed));
 
-
+struct IndexTable {
+    struct IndexEntry buf[CLUSTER_MAP_SIZE];
+} __attribute__((packed));
 
 
 /* -- FAT32 Data Structures -- */

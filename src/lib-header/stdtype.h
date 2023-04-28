@@ -6,6 +6,7 @@
 */
 typedef unsigned int uintsize_t;
 
+typedef unsigned long long int uint64_t;
 /**
  * 32-bit unsigned integer
  */

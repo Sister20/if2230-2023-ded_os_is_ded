@@ -20,6 +20,7 @@ void framebuffer_write(uint8_t row, uint8_t col, char c, uint8_t fg, uint8_t bg)
 }
 
 void framebuffer_clear(void) {
+    framebuffer_set_cursor(0, 0);
     memset(MEMORY_FRAMEBUFFER,0x00, BUFFER_WIDTH * BUFFER_HEIGHT * 2);
 }
 

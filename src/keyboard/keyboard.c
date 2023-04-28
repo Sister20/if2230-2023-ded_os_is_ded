@@ -43,9 +43,7 @@ void keyboard_state_deactivate(void){
 
 // Get keyboard buffer values - @param buf Pointer to char buffer, recommended size at least KEYBOARD_BUFFER_SIZE
 void get_keyboard_buffer(char *buf){
-    for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++){
-        buf[i] = keyboard_state.keyboard_buffer[i];
-    }
+    memcpy(buf, keyboard_state.keyboard_buffer, KEYBOARD_BUFFER_SIZE);
     keyboard_state.buffer_index = 0;
     memset(keyboard_state.keyboard_buffer, 0, KEYBOARD_BUFFER_SIZE);
 }
@@ -65,6 +63,7 @@ void keyboard_isr(void) {
         // TODO : Implement scancode processing
         if (mapped_char != '\0'){
             if (mapped_char == '\n'){
+                keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
                 keyboard_state_deactivate();
                 if (framebuffer_get_row() < BUFFER_HEIGHT-1){
                     framebuffer_move_cursor_down();
@@ -75,6 +74,7 @@ void keyboard_isr(void) {
             else if (mapped_char == '\b'){
                 if (keyboard_state.buffer_index == 0) {
                     keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
+                    framebuffer_write_curCursor(' ', 0xF, 0);
                 } else if (framebuffer_get_row() > 0 || framebuffer_get_col() > 0){
                     keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
                     keyboard_state.buffer_index--;

@@ -488,3 +488,44 @@ uint32_t move_to_parent_directory(struct FAT32DriverRequest request) {
     read_clusters(&directory, request.parent_cluster_number, 1);
     return directory.table->cluster_high << 16 | directory.table->cluster_low;;
 }
+
+void init_index_file() {
+    read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+    driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER] = 1;
+    for (int i = 1; i < sizeof(struct IndexTable)/ CLUSTER_SIZE; i++) {
+        driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER + i] = FAT32_FAT_END_OF_FILE;
+    }
+    write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+}
+
+void insert_index(char* name, uint32_t parent_cluster_number) {
+    struct IndexTable index_table;
+    read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+    read_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
+    int insert_idx = driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER];
+    while (index_table.buf->name[insert_idx] > (uint64_t) *name && insert_idx > 0) {
+        index_table.buf[insert_idx] = index_table.buf[insert_idx - 1];
+        --insert_idx;
+    }
+    index_table.buf[insert_idx]->name = *name;
+    index_table.buf[insert_idx]->parent_cluster_number = parent_cluster_number;
+    driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER]++;
+    write_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
+    write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+}
+
+// void delete_index(char* name, uint32_t parent_cluster_number) {
+//     struct IndexTable index_table;
+//     read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+//     read_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
+//     int insert_idx = driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER];
+//     while (index_table.buf->name[insert_idx] > (uint64_t) *name && insert_idx > 0) {
+//         index_table.buf[insert_idx] = index_table.buf[insert_idx - 1];
+//         --insert_idx;
+//     }
+//     index_table.buf[insert_idx]->name = *name;
+//     index_table.buf[insert_idx]->parent_cluster_number = parent_cluster_number;
+//     driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER]++;
+//     write_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
+//     write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+// }
