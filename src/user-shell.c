@@ -283,20 +283,28 @@ int main(void) {
                 memcpy(request.ext, "dir", 3);
             }
             int retcode;
+            request.buf = request_buf;
             syscall(12, (uint32_t) &request, (uint32_t) &retcode, 0);
-            if (retcode == 0) {
-                syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_LIGHT_RED);
-                print(" not found!\n", BIOS_LIGHT_RED);
-            } else {
-                print(request_buf, BIOS_WHITE);
+            syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
+            memcpy(request_buf + 3 * CLUSTER_SIZE, argument1, argument1_length);
+            print(": ", BIOS_WHITE);
+            for (int i = 0; i < retcode; i++) {
+                char path [KEYBOARD_BUFFER_SIZE];
                 print("/", BIOS_WHITE);
-                print(argument1, BIOS_WHITE);
+                syscall(6, (uint32_t) path, *(((uint32_t *) request_buf) + i), 0);
+                print(path, BIOS_WHITE);
+                memset(request_buf + CLUSTER_SIZE, 0, CLUSTER_SIZE);
+                print("/", BIOS_WHITE);
+                print(request_buf + 3 * CLUSTER_SIZE, BIOS_WHITE);
+                print("  ", BIOS_WHITE);
             }
+            print("\n", BIOS_WHITE);
         } else if (memcmp(command, "clear", 5) == 0) {
             syscall(11, 0, 0, 0);
         } else {
             print("command invalid\n", BIOS_LIGHT_RED);
         }
+        memset(keyboard_buf, 0, KEYBOARD_BUFFER_SIZE);
     }
     return 0;
 }

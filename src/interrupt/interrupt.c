@@ -80,7 +80,8 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             keyboard_state_deactivate();
             break;
         case (5) :
-            puts((char *) cpu.ebx, cpu.ecx, cpu.edx); 
+            char *string = (char *) cpu.ebx;
+            puts(string, cpu.ecx, cpu.edx); 
             break;
         case (6) :
             get_dir_path((char *) cpu.ebx, cpu.ecx); 
@@ -101,13 +102,9 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             framebuffer_clear();
             break;
         case (12) :
-            uint32_t parent_cluster_number = search_index(request.name, request.ext);
-            if (!parent_cluster_number) {
-                *((uint32_t*) cpu.ecx) = 0;
-                return;
-            }
-            get_dir_path((char *) request.buf, parent_cluster_number);
-            *((uint32_t*) cpu.ecx) = 1;
+            uint32_t found_count = search_index((uint32_t *) request.buf, request.name, request.ext);
+            *((uint32_t*) cpu.ecx) = found_count;
+            break;
     }
 }
 

@@ -288,7 +288,7 @@ void init_index_file();
 
 void insert_index(char* name, char* ext, uint32_t parent_cluster_number);
 
-uint32_t search_index(char* name, char* ext);
+uint32_t search_index(uint32_t* buffer, char* name, char* ext);
 
 int delete_index(char* name, char* ext, uint32_t parent_cluster_number);
 

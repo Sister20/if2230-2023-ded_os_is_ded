@@ -515,20 +515,21 @@ void insert_index(char* name, char* ext, uint32_t parent_cluster_number) {
 }
 
 
-uint32_t search_index(char* name, char* ext) {
+uint32_t search_index(uint32_t* buffer, char* name, char* ext) {
     struct IndexTable index_table;
     read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
     read_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
     int entry_count = driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER];
-
+    uint32_t found_count = 0;
     for (int i = 0; i < entry_count; i++) {
         struct IndexEntry entry = index_table.buf[i];
         if (memcmp(entry.name, name, 8) == 0 &&
                 memcmp(entry.ext, ext, 3) == 0) {
-                    return entry.parent_cluster_number;
+                    memcpy(buffer + found_count, &entry.parent_cluster_number, 4);
+                    found_count++;
             }
     }
-    return 0;
+    return found_count;
 }
 
 int delete_index(char* name, char* ext, uint32_t parent_cluster_number) {
