@@ -75,9 +75,9 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
             __asm__("sti"); 
             while (is_keyboard_blocking());
             char buf[KEYBOARD_BUFFER_SIZE];
+            keyboard_state_deactivate();
             get_keyboard_buffer(buf);
             memcpy((char *) cpu.ebx, buf, cpu.ecx);
-            keyboard_state_deactivate();
             break;
         case (5) :
             char *string = (char *) cpu.ebx;
