@@ -57,8 +57,15 @@ char* get_word(int num) {
     return temp;
 }
 
+void reset_buffer() {
+    memset(request_buf, 0, BUFFER_SIZE);
+    memset(&request, 0, sizeof(struct FAT32DriverRequest));
+    memset(keyboard_buf, 0, KEYBOARD_BUFFER_SIZE);
+}
+
 int main(void) {
     while (TRUE) {
+        reset_buffer();
         syscall(5, (uint32_t) "ded-os-is-ded", 13, BIOS_LIGHT_GREEN);
         syscall(5, (uint32_t) ":", 1, BIOS_WHITE);
         syscall(6, (uint32_t) request_buf, cwd_cluster_number, 0);
@@ -194,7 +201,7 @@ int main(void) {
             } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
                 print("Request is not a file..\n", BIOS_LIGHT_RED);
             } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
-                print("Request file not found in current directory..\n", BIOS_LIGHT_RED);
+                print("cp: cannot stat: No such file or directory\n", BIOS_LIGHT_RED);
             } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
                 print("Unknown error occurs..\n", BIOS_LIGHT_RED);
             
@@ -218,15 +225,19 @@ int main(void) {
                     request.ext[l] = argument1[temp_k + 1 + l];
                 }
 
-                syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
-                if (retcode == W_REQUEST_INVALID_PARENT_RETURN) {
-                    print("FAILED TO WRITE..\n", BIOS_LIGHT_RED);
-                } else if (retcode == W_REQUEST_FILE_ALREADY_EXIST_RETURN) {
-                    print("FAILED TO WRITE..\n", BIOS_LIGHT_RED);
-                } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
-                    print("FAILED TO WRITE..\n", BIOS_LIGHT_RED);
+                if (request.name[0] != '\0' && request.name[0] != ' ') {
+                    syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
+                    if (retcode == W_REQUEST_INVALID_PARENT_RETURN) {
+                        print("FAILED TO WRITE..\n", BIOS_LIGHT_RED);
+                    } else if (retcode == W_REQUEST_FILE_ALREADY_EXIST_RETURN) {
+                        print("FAILED TO WRITE..\n", BIOS_LIGHT_RED);
+                    } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
+                        print("FAILED TO WRITE..\n", BIOS_LIGHT_RED);
+                    } else {
+                        print("File has been copied successfully!\n", BIOS_LIGHT_GREEN);
+                    }
                 } else {
-                    print("File has been copied successfully!\n", BIOS_LIGHT_GREEN);
+                    print("cp: missing destination file operand\n", BIOS_LIGHT_RED);
                 }
             }
 
@@ -256,13 +267,130 @@ int main(void) {
             if (retcode == D_REQUEST_UNKNOWN_RETURN) {
                 print("FAILED TO REMOVE..\n", BIOS_LIGHT_RED);
             } else if (retcode == D_REQUEST_NOT_FOUND_RETURN) {
-                print("FAILED TO REMOVE..\n", BIOS_LIGHT_RED);
+                print("rm: cannot remove: No such file or directory\n", BIOS_LIGHT_RED);
             } else {
                 print("File has been removed successfully!\n", BIOS_LIGHT_GREEN);
             }
             
         } else if (memcmp(command, "mv", 2) == 0 && *argument1) {
-            print("command mv\n", BIOS_WHITE);
+            //DECLARE
+            int retcode;
+            int temp_i;
+            int a = 0;
+            // uint32_t temp = cwd_cluster_number;
+
+            //PREPARING REQUEST
+            request.buf = request_buf;
+            request.parent_cluster_number = cwd_cluster_number;
+            request.buffer_size = BUFFER_SIZE;
+
+            // --- READ REQUEST ---
+            //PARSING NAME AND EXTENSION
+            // File
+            for (int i = 0; i < 8; i++) {
+                if (argument1[i] == '.') {
+                    temp_i = i;
+                    break;
+                } else {
+                    request.name[i] = argument1[i];
+                }
+            }
+            for (int j = 0; j < 3; j++) {
+                request.ext[j] = argument1[temp_i + 1 + j];
+            }
+
+            syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
+            if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
+                print("Request file size is too large..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
+                print("Request is not a file..\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
+                print("mv: cannot stat: No such file or directory\n", BIOS_LIGHT_RED);
+            } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
+                print("Unknown error occurs..\n", BIOS_LIGHT_RED);
+            
+            } else {
+                //PARSING NAME AND EXTENSION
+                for (int x = 0; request.name[x] != '\0'; x++) {
+                    request.name[x] = '\0';
+                }
+                // Destination Directory
+                for (int k = temp_i+3+2; k < temp_i+3+2+8; k++) {
+                    if (argument1[k] == '\0') {
+                        break;
+                    } else {
+                        request.name[a] = argument1[k];
+                        a = a + 1;
+                    }
+                }
+                for (int x = 0; x < length(request.name); x++) {
+                    print (request.name, BIOS_LIGHT_RED);
+                }
+
+                //CHANGE THE DIRECTORY
+                reset_buffer();
+                request.buffer_size = BUFFER_SIZE;
+                request.buf = request_buf;
+                request.parent_cluster_number = cwd_cluster_number;
+                memcpy(request.ext, "dir", 3);
+
+                syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+                if (retcode == RD_REQUEST_UNKNOWN_RETURN) {
+                    print("Unknown error has occured..\n", BIOS_LIGHT_RED);
+                } else if (retcode == RD_REQUEST_NOT_FOUND_RETURN) {
+                    print("Directory not found..\n", BIOS_LIGHT_RED);
+
+                } else {
+                    syscall(9, (uint32_t) &request, (uint32_t) &retcode, 0);
+                    cwd_cluster_number = retcode;
+
+                    //PARSING FILE NAME (AGAIN)
+                    for (int x = 0; request.name[x] != '\0'; x++) {
+                        request.name[x] = '\0';
+                    }
+                    // File
+                    for (int i = 0; i < 8; i++) {
+                        if (argument1[i] == '.') {
+                            temp_i = i;
+                            break;
+                        } else {
+                            request.name[i] = argument1[i];
+                        }
+                    }
+                    for (int j = 0; j < 3; j++) {
+                        request.ext[j] = argument1[temp_i + 1 + j];
+                    }
+
+                    // --- WRITE REQUEST ---
+                    reset_buffer();
+                    request.buffer_size = BUFFER_SIZE;
+                    request.buf = request_buf;
+                    request.parent_cluster_number = cwd_cluster_number;
+
+                    syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
+                    if (retcode == W_REQUEST_INVALID_PARENT_RETURN) {
+                        print("FAILED TO WRITE..\n", BIOS_LIGHT_RED);
+                    } else if (retcode == W_REQUEST_FILE_ALREADY_EXIST_RETURN) {
+                        print("Failed to write because file already exist..\n", BIOS_LIGHT_RED);
+                    } else if (retcode == W_REQUEST_UNKNOWN_RETURN) {
+                        print("Unknown error occured..\n", BIOS_LIGHT_RED);
+                        
+                    } else {
+                        // --- DELETE REQUEST ---
+                        reset_buffer();
+                        request.parent_cluster_number = cwd_cluster_number;
+                        syscall(3, (uint32_t) &request, (uint32_t) &retcode, 0);
+                        if (retcode == D_REQUEST_UNKNOWN_RETURN) {
+                            print("Failed to remove old file..\n", BIOS_LIGHT_RED);
+                        } else if (retcode == D_REQUEST_NOT_FOUND_RETURN) {
+                            print("Failed to remove old file..\n", BIOS_LIGHT_RED);
+                        } else {
+                            print("File has been moved successfully!\n", BIOS_LIGHT_GREEN);
+                        }
+                    }
+                }
+            }
+            
         } else if (memcmp(command, "whereis", 7) == 0) {
             char* arg = argument1;
             request.buffer_size = BUFFER_SIZE;
