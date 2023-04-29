@@ -79,15 +79,7 @@ int remove(char* argument1) {
     for (int j = 0; j < 3; j++) {
         request.ext[j] = argument1[temp_i + 1 + j];
     }
-
     syscall(3, (uint32_t) &request, (uint32_t) &retcode, 0);
-    if (retcode == D_REQUEST_UNKNOWN_RETURN) {
-        print("FAILED TO REMOVE..\n", BIOS_LIGHT_RED);
-    } else if (retcode == D_REQUEST_NOT_FOUND_RETURN) {
-        print("FAILED TO REMOVE..\n", BIOS_LIGHT_RED);
-    } else {
-        print("File has been removed successfully!\n", BIOS_LIGHT_GREEN);
-    }
     return retcode;
 }
 
@@ -168,7 +160,6 @@ int copy(char* argument1, char* argument2, int mv) {
     int retcode;
     syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
     if (retcode != R_REQUEST_SUCCESS_RETURN) {
-        print("Here", BIOS_WHITE);
         return 0;
     }
 
@@ -184,14 +175,14 @@ int copy(char* argument1, char* argument2, int mv) {
             || length(argument2) == length(last_path);
         if (!is_path_valid) {
             cwd_cluster_number = temp_cwd;
-            return 0;
+            return -1;
         }
     } else {
         is_path_valid = relative_cd(argument2, length(argument2)) 
             || length(argument2) == length(last_path);
         if (!is_path_valid) {
             cwd_cluster_number = temp_cwd;
-            return 0;
+            return -1;
         }
     }
 
@@ -221,6 +212,9 @@ int copy(char* argument1, char* argument2, int mv) {
     request.buf = file_buffer;
     request.parent_cluster_number = cwd_cluster_number;
     syscall(2, (uint32_t) &request, (uint32_t) &retcode, 0);
+    if (retcode != W_REQUEST_SUCCESS_RETURN) {
+        return 1;
+    }
     cwd_cluster_number = temp_cwd;
     return 1;
 }
@@ -316,12 +310,59 @@ int main(void) {
                 syscall(7, (uint32_t) request_buf, BUFFER_SIZE, 0);
             }
         } else if (memcmp(command, "cp", 2) == 0 && argument1_length != 0) {
-            copy(argument1, argument2 , 0);
+            int retcode = copy(argument1, argument2 , 0);
+            if (retcode != 1) {
+                syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
+                print("cp: ", BIOS_WHITE);
+                if (retcode == -1) {
+                    syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
+                    print(": Error while reading source\n", BIOS_WHITE);
+                } else {
+                    syscall(5, (uint32_t) argument2, (uint32_t) argument2_length, BIOS_WHITE);
+                    print(": Error while writing dest\n", BIOS_WHITE);
+                }
+            }
         } else if (memcmp(command, "rm", 2) == 0 && *argument1) {
-            remove(argument1);
+            print("rm: ", BIOS_WHITE);
+            syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
+            print(": ", BIOS_WHITE);
+            int retcode = remove(argument1);
+            if (retcode == D_FOLDER_NOT_EMPTY_RETURN) {
+                print("cannot remove: Directory is not empty\n", BIOS_WHITE);
+                continue;
+            } else if (retcode == D_REQUEST_NOT_FOUND_RETURN) {
+                print("cannot remove: No such file or directory\n", BIOS_WHITE);
+                continue;
+            } else if (retcode == D_REQUEST_SUCCESS_RETURN) {
+                continue;
+            } else if (retcode == D_REQUEST_UNKNOWN_RETURN) {
+                print("Unknown error occurs\n", BIOS_WHITE);
+            }
         } else if (memcmp(command, "mv", 2) == 0 && *argument1) {
-            copy(argument1, argument2, 1);
-            remove(argument1);
+            int retcode = copy(argument1, argument2, 1);
+             if (retcode != 1) {
+                syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
+                print("mv: ", BIOS_WHITE);
+                if (retcode == -1) {
+                    syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
+                    print(": Error while reading source\n", BIOS_WHITE);
+                    continue;
+                } else {
+                    syscall(5, (uint32_t) argument2, (uint32_t) argument2_length, BIOS_WHITE);
+                    print(": Error while writing dest\n", BIOS_WHITE);
+                    continue;
+                }
+            }
+            retcode = remove(argument1);
+            if (retcode == D_FOLDER_NOT_EMPTY_RETURN) {
+                continue;
+            } else if (retcode == D_REQUEST_NOT_FOUND_RETURN) {
+                continue;
+            } else if (retcode == D_REQUEST_SUCCESS_RETURN) {
+                continue;
+            } else if (retcode == D_REQUEST_UNKNOWN_RETURN) {
+                continue;
+            }
         } else if (memcmp(command, "whereis", 7) == 0) {
             char* arg = argument1;
             request.buffer_size = BUFFER_SIZE;
