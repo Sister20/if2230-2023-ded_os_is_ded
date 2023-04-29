@@ -4,8 +4,9 @@
 /**
  * Unsigned integer representing object size
 */
-typedef unsigned int size_t;
+typedef unsigned int uintsize_t;
 
+typedef unsigned long long int uint64_t;
 /**
  * 32-bit unsigned integer
  */

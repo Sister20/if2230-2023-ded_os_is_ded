@@ -1,7 +1,7 @@
 #ifndef _STDMEM_H
 #define _STDMEM_H
 
-#include "lib-header/stdtype.h"
+#include "stdtype.h"
 
 /**
  * C standard memset, check man memset or
@@ -13,7 +13,7 @@
  * 
  * @return Pointer s
 */
-void* memset(void *s, int c, size_t n);
+void* memset(void *s, int c, uintsize_t n);
 
 /**
  * C standard memcpy, check man memcpy or
@@ -25,7 +25,7 @@ void* memset(void *s, int c, size_t n);
  * 
  * @return Pointer dest
 */
-void* memcpy(void* restrict dest, const void* restrict src, size_t n);
+void* memcpy(void* restrict dest, const void* restrict src, uintsize_t n);
 
 /**
  * C standard memcmp, check man memcmp or
@@ -37,7 +37,7 @@ void* memcpy(void* restrict dest, const void* restrict src, size_t n);
  * 
  * @return Integer as error code, zero for equality, non-zero for inequality
 */
-int memcmp(const void *s1, const void *s2, size_t n);
+int memcmp(const void *s1, const void *s2, uintsize_t n);
 
 /**
  * C standard memmove, check man memmove or
@@ -49,6 +49,6 @@ int memcmp(const void *s1, const void *s2, size_t n);
  * 
  * @return Pointer dest
 */
-void *memmove(void *dest, const void *src, size_t n);
+void *memmove(void *dest, const void *src, uintsize_t n);
 
 #endif
