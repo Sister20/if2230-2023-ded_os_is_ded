@@ -81,6 +81,7 @@ void initialize_filesystem_fat32(void){
     if (is_empty_storage()){
         create_fat32();
         initialize_root();
+        init_index_file();
     } else {
         read_clusters(driver_state.fat_table.cluster_map, FAT_CLUSTER_NUMBER, 1);
     }
@@ -205,7 +206,7 @@ int8_t read(struct FAT32DriverRequest request) {
 }
 
 uint32_t get_empty_cluster() {
-    for (uint32_t i = 3; i < CLUSTER_MAP_SIZE; i++) {
+    for (uint32_t i = 8; i < CLUSTER_MAP_SIZE; i++) {
         bool is_current_cluster_empty = (driver_state.fat_table.cluster_map[i] == FAT32_FAT_EMPTY_ENTRY);
         if (is_current_cluster_empty) {
             driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
@@ -302,7 +303,7 @@ int8_t write(struct FAT32DriverRequest request) {
         write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
 
     }
-
+    insert_index(request.name, request.ext, request.parent_cluster_number);
     return W_REQUEST_SUCCESS_RETURN;
 }
 
@@ -331,6 +332,7 @@ int8_t delete(struct FAT32DriverRequest request) {
                     return D_FOLDER_NOT_EMPTY_RETURN;
                 } else {
                     // HAPUS FOLDER
+                    delete_index(request.name, request.ext, request.parent_cluster_number);
                     uint32_t deleted_cluster_number = ((uint32_t) current.cluster_high) << 16 | current.cluster_low;
                     driver_state.fat_table.cluster_map[deleted_cluster_number] = FAT32_FAT_EMPTY_ENTRY;
                     reset_entry(&driver_state.dir_table_buf.table[i]);
@@ -343,6 +345,7 @@ int8_t delete(struct FAT32DriverRequest request) {
             } else {
                 // HAPUS FILE
                 // PERLU DIBENERIN
+                delete_index(request.name, request.ext, request.parent_cluster_number);
                 uint32_t deleted_cluster_number = ((uint32_t) current.cluster_high) << 16 | current.cluster_low;
                 while (driver_state.fat_table.cluster_map[deleted_cluster_number] != FAT32_FAT_END_OF_FILE) {
                     uint32_t temp_cluster = deleted_cluster_number;
@@ -491,41 +494,67 @@ uint32_t move_to_parent_directory(struct FAT32DriverRequest request) {
 
 void init_index_file() {
     read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
-    driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER] = 1;
+    driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER] = 0;
     for (uint32_t i = 1; i < sizeof(struct IndexTable)/ CLUSTER_SIZE; i++) {
         driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER + i] = FAT32_FAT_END_OF_FILE;
     }
     write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
 }
 
-void insert_index(char* name, uint32_t parent_cluster_number) {
+void insert_index(char* name, char* ext, uint32_t parent_cluster_number) {
     struct IndexTable index_table;
     read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
     read_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
     int insert_idx = driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER];
-    while (index_table.buf[insert_idx].name > (uint64_t) *name && insert_idx > 0) {
-        index_table.buf[insert_idx] = index_table.buf[insert_idx - 1];
-        --insert_idx;
-    }
-    index_table.buf[insert_idx].name = *name;
+    memcpy(index_table.buf[insert_idx].name, name, 8);
+    memcpy(index_table.buf[insert_idx].ext, ext, 3);
     index_table.buf[insert_idx].parent_cluster_number = parent_cluster_number;
     driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER]++;
     write_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
     write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
 }
 
-// void delete_index(char* name, uint32_t parent_cluster_number) {
-//     struct IndexTable index_table;
-//     read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
-//     read_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
-//     int insert_idx = driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER];
-//     while (index_table.buf->name[insert_idx] > (uint64_t) *name && insert_idx > 0) {
-//         index_table.buf[insert_idx] = index_table.buf[insert_idx - 1];
-//         --insert_idx;
-//     }
-//     index_table.buf[insert_idx]->name = *name;
-//     index_table.buf[insert_idx]->parent_cluster_number = parent_cluster_number;
-//     driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER]++;
-//     write_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
-//     write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
-// }
+
+uint32_t search_index(char* name, char* ext) {
+    struct IndexTable index_table;
+    read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+    read_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
+    int entry_count = driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER];
+
+    for (int i = 0; i < entry_count; i++) {
+        struct IndexEntry entry = index_table.buf[i];
+        if (memcmp(entry.name, name, 8) == 0 &&
+                memcmp(entry.ext, ext, 3) == 0) {
+                    return entry.parent_cluster_number;
+            }
+    }
+    return 0;
+}
+
+int delete_index(char* name, char* ext, uint32_t parent_cluster_number) {
+    struct IndexTable index_table;
+    read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+    read_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
+    int entry_count = driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER];
+    int i = 0;
+    int found = 0;
+    for (i = 0; i < entry_count; i++) {
+        struct IndexEntry entry = index_table.buf[i];
+        if (memcmp(entry.name, name, 8) == 0 &&
+            memcmp(entry.ext, ext, 3) == 0 && 
+            entry.parent_cluster_number == parent_cluster_number ) {
+                    found = 1;
+                    break;
+            }
+    }
+    if (!found) {
+        return 0;
+    }
+    for (;i < entry_count - 1; i++) {
+        index_table.buf[i] = index_table.buf[i + 1];
+    }
+    driver_state.fat_table.cluster_map[INDEX_CLUSTER_NUMBER]--;
+    write_clusters(&index_table, INDEX_CLUSTER_NUMBER, sizeof(struct IndexTable)/ CLUSTER_SIZE);
+    write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+    return 0;
+}

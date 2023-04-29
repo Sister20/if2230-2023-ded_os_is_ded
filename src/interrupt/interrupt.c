@@ -100,6 +100,14 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         case (11) :
             framebuffer_clear();
             break;
+        case (12) :
+            uint32_t parent_cluster_number = search_index(request.name, request.ext);
+            if (!parent_cluster_number) {
+                *((uint32_t*) cpu.ecx) = 0;
+                return;
+            }
+            get_dir_path((char *) request.buf, parent_cluster_number);
+            *((uint32_t*) cpu.ecx) = 1;
     }
 }
 

@@ -264,7 +264,34 @@ int main(void) {
         } else if (memcmp(command, "mv", 2) == 0 && *argument1) {
             print("command mv\n", BIOS_WHITE);
         } else if (memcmp(command, "whereis", 7) == 0) {
-            print("command whereis\n", BIOS_WHITE);
+            char* arg = argument1;
+            request.buffer_size = BUFFER_SIZE;
+            request.buf = request_buf;
+            request.parent_cluster_number = cwd_cluster_number;
+            int i;
+            for (i = 0; i < 8 && *arg != '.' && *arg != '\n'; i++) {
+                request.name[i] = *arg++;
+            }
+            memset(request.name + i, 0, 8 - i);
+            bool ext = *arg++ == '.';
+            if (ext) {
+                for (i = 0; i < 3 && *arg != ' ' && *arg != '\n'; i++) {
+                    request.ext[i] = *arg++;  
+                }
+                memset(request.name + i, 0, 3 - i);
+            } else {
+                memcpy(request.ext, "dir", 3);
+            }
+            int retcode;
+            syscall(12, (uint32_t) &request, (uint32_t) &retcode, 0);
+            if (retcode == 0) {
+                syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_LIGHT_RED);
+                print(" not found!\n", BIOS_LIGHT_RED);
+            } else {
+                print(request_buf, BIOS_WHITE);
+                print("/", BIOS_WHITE);
+                print(argument1, BIOS_WHITE);
+            }
         } else if (memcmp(command, "clear", 5) == 0) {
             syscall(11, 0, 0, 0);
         } else {

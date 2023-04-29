@@ -66,7 +66,8 @@ struct ClusterBuffer {
 } __attribute__((packed));
 
 struct IndexEntry {
-    uint64_t name;
+    char name[8];
+    char ext[3];
     uint32_t parent_cluster_number;
 } __attribute__((packed));
 
@@ -282,5 +283,13 @@ void get_children(char* buffer, uint32_t directory_cluster_number);
 uint32_t move_to_child_directory(struct FAT32DriverRequest request);
 
 uint32_t move_to_parent_directory(struct FAT32DriverRequest request);
+
+void init_index_file();
+
+void insert_index(char* name, char* ext, uint32_t parent_cluster_number);
+
+uint32_t search_index(char* name, char* ext);
+
+int delete_index(char* name, char* ext, uint32_t parent_cluster_number);
 
 #endif
