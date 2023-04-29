@@ -15,7 +15,7 @@
 uint32_t cwd_cluster_number = ROOT_CLUSTER_NUMBER;
 char request_buf[BUFFER_SIZE];
 struct FAT32DriverRequest request;
-char keyboard_buf[KEYBOARD_BUFFER_SIZE] = {0};
+char keyboard_buf[KEYBOARD_BUFFER_SIZE];
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("mov %0, %%ebx" : /* <Empty> */ : "r"(ebx));
@@ -57,8 +57,15 @@ char* get_word(int num) {
     return temp;
 }
 
+void reset_buffer() {
+    memset(request_buf, 0, BUFFER_SIZE);
+    memset(&request, 0, sizeof(struct FAT32DriverRequest));
+    memset(keyboard_buf, 0, KEYBOARD_BUFFER_SIZE);
+}
+
 int main(void) {
     while (TRUE) {
+        reset_buffer();
         syscall(5, (uint32_t) "ded-os-is-ded", 13, BIOS_LIGHT_GREEN);
         syscall(5, (uint32_t) ":", 1, BIOS_WHITE);
         syscall(6, (uint32_t) request_buf, cwd_cluster_number, 0);
@@ -151,14 +158,17 @@ int main(void) {
             memset(request.name + i, 0, 3 - i);
             int retcode;
             syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
+            print("cat: ", BIOS_WHITE);
+            syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
+            print(": ", BIOS_WHITE);
             if (retcode == R_NOT_ENOUGH_BUFFER_RETURN) {
-                print("Request file size is too large..\n", BIOS_LIGHT_RED);
+                print("File size is too large\n", BIOS_WHITE);
             } else if (retcode == R_REQUEST_NOT_A_FILE_RETURN) {
-                print("Request is not a file..\n", BIOS_LIGHT_RED);
+                print("Is a directory\n", BIOS_WHITE);
             } else if (retcode == R_REQUEST_NOT_FOUND_RETURN) {
-                print("Request file not found in current directory..\n", BIOS_LIGHT_RED);
+                print("No such file or directory\n", BIOS_WHITE);
             } else if (retcode == R_REQUEST_UNKNOWN_RETURN) {
-                print("Unknown error occurs..\n", BIOS_LIGHT_RED);
+                print("Unknown error occurs\n", BIOS_LIGHT_RED);
             } else {
                 syscall(7, (uint32_t) request_buf, BUFFER_SIZE, 0);
             }
@@ -286,6 +296,7 @@ int main(void) {
             request.buf = request_buf;
             syscall(12, (uint32_t) &request, (uint32_t) &retcode, 0);
             syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
+            memset(request_buf + 3 * CLUSTER_SIZE, 0, CLUSTER_SIZE);
             memcpy(request_buf + 3 * CLUSTER_SIZE, argument1, argument1_length);
             print(": ", BIOS_WHITE);
             for (int i = 0; i < retcode; i++) {
@@ -304,7 +315,6 @@ int main(void) {
         } else {
             print("command invalid\n", BIOS_LIGHT_RED);
         }
-        memset(keyboard_buf, 0, KEYBOARD_BUFFER_SIZE);
     }
     return 0;
 }

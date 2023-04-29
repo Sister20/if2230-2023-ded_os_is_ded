@@ -37,32 +37,32 @@ void kernel_setup(void) {
     };
     read(request);
     
-    // struct FAT32DriverRequest request2 = {
-    //     .buf                   = (uint8_t*) "Lorem ipsum dolor sit amet, consectetur adipiscing elit, \n",
-    //     .name                  = "lorem",
-    //     .ext                   = "txt",
-    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-    //     .buffer_size           = 1*CLUSTER_SIZE,
-    // };
-    // write(request2);
+    struct FAT32DriverRequest request2 = {
+        .buf                   = (uint8_t*) "Lorem ipsum dolor sit amet, consectetur adipiscing elit, \n",
+        .name                  = "lorem",
+        .ext                   = "txt",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 1*CLUSTER_SIZE,
+    };
+    write(request2);
 
-    // struct FAT32DriverRequest request3 = {
-    //     .buf                   = (uint8_t*) "segs bebas",
-    //     .name                  = "segs",
-    //     .ext                   = "dir",
-    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-    //     .buffer_size           = 0,
-    // };
-    // write(request3);
+    struct FAT32DriverRequest request3 = {
+        .buf                   = (uint8_t*) "segs bebas",
+        .name                  = "segs",
+        .ext                   = "dir",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0,
+    };
+    write(request3);
 
-    // struct FAT32DriverRequest request4 = {
-    //     .buf                   = (uint8_t*) "segs",
-    //     .name                  = "sugar",
-    //     .ext                   = "dir",
-    //     .parent_cluster_number = 5,
-    //     .buffer_size           = 0,
-    // };
-    // write(request4);
+    struct FAT32DriverRequest request4 = {
+        .buf                   = (uint8_t*) "segs",
+        .name                  = "sugar",
+        .ext                   = "dir",
+        .parent_cluster_number = 5,
+        .buffer_size           = 0,
+    };
+    write(request4);
 
     // insert_index("zipdig\0\0", "txt", 3);
     // insert_index("bento\0\0\0", "txt", 3);
