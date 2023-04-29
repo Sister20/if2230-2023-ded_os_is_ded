@@ -87,7 +87,8 @@ int remove(char* argument1) {
 
 int cd(char* argument1, int argument1_length) {
     int ret;
-    uint32_t retcode;
+    uint32_t retcode = 0;
+    struct FAT32DriverRequest request;
     if (memcmp("..", argument1, 2) == 0 && argument1_length == 2) {
         request.parent_cluster_number = cwd_cluster_number;
         if (cwd_cluster_number != ROOT_CLUSTER_NUMBER) {
@@ -112,6 +113,8 @@ int cd(char* argument1, int argument1_length) {
             cwd_cluster_number = retcode;
             ret = 1;
         } else if (retcode == RD_REQUEST_NOT_FOUND_RETURN) {
+            ret = 0;
+        } else if (retcode == RD_REQUEST_NOT_A_FOLDER_RETURN){
             ret = 0;
         }
     }
@@ -323,21 +326,24 @@ int main(void) {
                 }
             }
         } else if (memcmp(command, "rm", 2) == 0 && *argument1) {
-            print("rm: ", BIOS_WHITE);
-            syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
-            print(": ", BIOS_WHITE);
             int retcode = remove(argument1);
-            if (retcode == D_FOLDER_NOT_EMPTY_RETURN) {
+            if (retcode != D_REQUEST_SUCCESS_RETURN){
+                print("rm: ", BIOS_WHITE);
+                syscall(5, (uint32_t) argument1, (uint32_t) argument1_length, BIOS_WHITE);
+                print(": ", BIOS_WHITE);
+                 if (retcode == D_FOLDER_NOT_EMPTY_RETURN) {
                 print("cannot remove: Directory is not empty\n", BIOS_WHITE);
                 continue;
-            } else if (retcode == D_REQUEST_NOT_FOUND_RETURN) {
-                print("cannot remove: No such file or directory\n", BIOS_WHITE);
+                } else if (retcode == D_REQUEST_NOT_FOUND_RETURN) {
+                    print("cannot remove: No such file or directory\n", BIOS_WHITE);
+                    continue;
+                } else if (retcode == D_REQUEST_UNKNOWN_RETURN) {
+                    print("Unknown error occurs\n", BIOS_WHITE);
+                }
+            } else {
                 continue;
-            } else if (retcode == D_REQUEST_SUCCESS_RETURN) {
-                continue;
-            } else if (retcode == D_REQUEST_UNKNOWN_RETURN) {
-                print("Unknown error occurs\n", BIOS_WHITE);
             }
+           
         } else if (memcmp(command, "mv", 2) == 0 && *argument1) {
             int retcode = copy(argument1, argument2, 1);
              if (retcode != 1) {
